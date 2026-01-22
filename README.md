@@ -3,7 +3,7 @@
 ![Status](https://img.shields.io/badge/Status-Active-success)
 ![Docker](https://img.shields.io/badge/Containerization-Docker-blue)
 ![Network](https://img.shields.io/badge/VPN-Tailscale-orange)
-![OS](https://img.shields.io/badge/OS-Linux%20(Debian%2FUbuntu)-lightgrey)
+![OS](https://img.shields.io/badge/OS-Linux%20(Debian)-lightgrey)
 
 ## Overview
 This repository documents the infrastructure and configuration of my private self-hosted environment. The primary goals of this project are **data sovereignty**, **network security**, and **hands-on learning** of system administration.
@@ -11,11 +11,11 @@ This repository documents the infrastructure and configuration of my private sel
 The system orchestrates **17+ services** using Docker containers, accessible securely from anywhere via a mesh VPN (Tailscale) without exposing ports to the public internet.
 
 ## Architecture
-* **Hardware:** [e.g. Raspberry Pi 4 / Intel NUC / Old Laptop]
-* **OS:** [e.g. Ubuntu Server 22.04 LTS]
+* **Hardware:** [Raspberry Pi 4B 8GB, 1TB USB SSD]
+* **OS:** [Raspian OS]
 * **Networking:** Tailscale (Mesh VPN) with ACLs.
 * **Orchestration:** Docker Compose & Portainer.
-* **Reverse Proxy:** [e.g. Nginx Proxy Manager / Traefik]
+* **Reverse Proxy:** [Nginx Proxy Manager]
 
 ### Network Logic
 Traffic is routed internally using a reverse proxy. Access is restricted to devices authenticated via the Tailscale overlay network.
