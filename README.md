@@ -67,7 +67,7 @@ graph TD
     classDef proxy fill:#9B59B6,stroke:#6C3483,stroke-width:2px,color:#fff;
 
     %% SERVICES (The Containers) -> Currently Light Grey/White
-    classDef service fill:#2C3E50,stroke:#7F8C8D,stroke-width:2px,color:#7F8C8D;
+    classDef service fill:#2C3E50,stroke:#7F8C8D,stroke-width:2px,color:#fff;
 
     %% VPN (The Tailscale Box) -> Currently Deep Midnight Blue
     classDef vpn fill:#00004B,stroke:#00004B,stroke-width:2px,color:#fff; 
