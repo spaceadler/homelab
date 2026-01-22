@@ -1,4 +1,4 @@
-# My Private Mesh-Networked HomeLab
+# A Private, Mesh networked Homelab
 
 ![Status](https://img.shields.io/badge/Status-Active-success)
 ![Docker](https://img.shields.io/badge/Containerization-Docker-blue)
