@@ -54,53 +54,55 @@ The network topology is designed to prioritize rigorous security without sacrifi
 
 ```mermaid
 graph TD
-     %% STYLING
+    %% STYLING
     classDef client fill:#4A90E2,stroke:#2E5C8A,stroke-width:2px,color:#fff;
     classDef dns fill:#2C3E50,stroke:#34495E,stroke-width:2px,color:#fff;
     classDef proxy fill:#9B59B6,stroke:#6C3483,stroke-width:2px,color:#fff;
     classDef service fill:#ECF0F1,stroke:#7F8C8D,stroke-width:2px,color:#2C3E50;
-    classDef mesh fill:#00008B,stroke:#27AE60,stroke-width:2px,stroke-dasharray:
+    classDef vpn fill:#00004B,stroke:#27AE60,stroke-width:2px,color:#fff; 
+    classDef host fill:#ffffff,stroke:#BDC3C7,stroke-width:2px,stroke-dasharray: 5 5;
 
-    %% --- THE SECURE BOX ---
-    subgraph Mesh ["🔒 Tailscale Encrypted Mesh Network (No Public Ingress)"]
-        direction TB
+    %% NODES
+    User["Client Device<br/>(Phone / Laptop)"]:::client
+    
+    %% THE VPN TUNNEL (The Box the phone goes through)
+    VPN["🔒 Tailscale WireGuard Tunnel<br/>(Secure Gateway)"]:::vpn
+
+    subgraph Host [" ⚡ Raspberry Pi Host (100.x.y.z) "]
         
-        %% NODES
-        User["Client Device<br/>(Phone / Laptop)"]:::client
+        PiHole["Pi-Hole<br/>(The Phonebook)"]:::dns
+        Nginx["Nginx Proxy<br/>(The Receptionist)"]:::proxy
         
-        subgraph Host [" Raspberry Pi Host (100.x.y.z) "]
-            
-            PiHole["Pi-Hole<br/>(The Phonebook)"]:::dns
-            Nginx["Nginx Proxy<br/>(The Receptionist)"]:::proxy
-            
-            subgraph Containers [" Docker Containers "]
-                Music["Navidrome<br/>(Port 4533)"]:::service
-                Immich["Immich<br/>(Port 2283)"]:::service
-                AI["OpenWebUI<br/>(Port 3000)"]:::service
-                Files["FileBrowser<br/>(Port 8080)"]:::service
-                Docs["Docmost<br/>(Port 3000)"]:::service
-            end
+        subgraph Containers [" Docker Containers "]
+            Music["Navidrome<br/>(Port 4533)"]:::service
+            Immich["Immich<br/>(Port 2283)"]:::service
+            AI["OpenWebUI<br/>(Port 3000)"]:::service
+            Files["FileBrowser<br/>(Port 8080)"]:::service
+            Docs["Docmost<br/>(Port 3000)"]:::service
         end
     end
 
     %% LOGIC FLOW
     
-    %% Step 1: DNS
-    User -.->|"1. DNS Query<br/>(Inside Encrypted Tunnel)"| PiHole
-    PiHole -.->|"2. Resolution<br/>'It is at 100.x.y.z'"| User
+    %% Step 1: The Secure Connection
+    User ==>|"1. Connects via"| VPN
 
-    %% Step 2: Traffic
-    User ==>|"3. HTTP Request<br/>Host: music.local"| Nginx
+    %% Step 2: DNS (Through the Tunnel)
+    VPN -.->|"2. DNS Query"| PiHole
+    PiHole -.->|"3. Resolution"| VPN
 
-    %% Step 3: Routing
-    Nginx -->|"Host = music...<br/>Proxy to :4533"| Music
-    Nginx -->|"Host = gallery...<br/>Proxy to :2283"| Immich
-    Nginx -->|"Host = chat...<br/>Proxy to :3000"| AI
-    Nginx -->|"Host = files...<br/>Proxy to :8080"| Files
-    Nginx -->|"Host = docs...<br/>Proxy to :3000"| Docs
+    %% Step 3: Traffic (Through the Tunnel to Nginx)
+    VPN ==>|"4. Encrypted Traffic"| Nginx
 
-    %% Apply Mesh Style
-    class Mesh mesh;
+    %% Step 4: Internal Routing
+    Nginx -->|"Music"| Music
+    Nginx -->|"Photos"| Immich
+    Nginx -->|"Chat"| AI
+    Nginx -->|"Files"| Files
+    Nginx -->|"Wiki"| Docs
+
+    %% Style the Host box
+    class Host host;
 ```
 
 ### Traffic Flow Analysis & Packet Lifecycle
