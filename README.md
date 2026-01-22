@@ -29,7 +29,7 @@
 The `sovereign-homelab` repository represents a radical departure from the prevailing model of digital consumption, which relies heavily on centralized, rent-seeking Cloud Service Providers (CSPs). In the current digital epoch, termed by some analysts as the age of "technofeudalism," users typically lease access to their own data—photos, documents, financial records—paying with privacy and monthly subscriptions. This project inverts that dynamic, establishing a "First Principles" architecture where the user retains absolute authority over the data lifecycle, compute resources, and access control lists (ACLs).
 
 ### The Imperative of Data Sovereignty
-The primary driver for this architecture is Digital Sovereignty. Commercial cloud providers operate on models predicated on data surveillance, vendor lock-in, and the commodification of user behavior. By self-hosting critical infrastructure, we reclaim the "Digital Self."
+The primary driver for this architecture is Digital Sovereignty. Commercial cloud providers operate on models predicated on data mining, vendor lock-in, and the commodification of user behavior. By self-hosting critical infrastructure, we reclaim the "Digital Self."
 * Photos stored in **Immich** are files on a locally owned solid-state drive, not training data for a third-party generative adversarial network.
 * Notes in **Memos** and **Docmost** remain private cognitive artifacts rather than vectors for targeted advertising.
 
@@ -176,8 +176,8 @@ The "Entertainment Center." Replaces Spotify, Netflix, and Kindle.
 | **Immich** | Photos | Google Photos alternative. Uses machine learning for facial recognition. |
 | **Navidrome** | Music | Subsonic API streamer. Transcodes FLAC to Opus for mobile bandwidth efficiency. |
 | **Stremio** | Video Hub | Server component managing addons and stream resolution. |
-| **Kavita** | E-books | Specialized for Manga (CBZ) and Epubs with progress sync. |
-| **Kiwix** | Offline Knowledge | Hosts ZIM files (Wikipedia, StackOverflow) for offline access. |
+| **Kavita** | E-books | Specialized for ePubs and PDFs with progress sync. |
+| **Kiwix** | Offline Knowledge | Hosts ZIM files (Wikipedia, iFixit) for offline access. |
 
 ---
 
@@ -188,9 +188,9 @@ The "Second Brain." Replaces Notion, Todoist, and Google Calendar.
 | Service | Function | Configuration |
 | --- | --- | --- |
 | **Docmost** | Documentation | Real-time collaborative wiki with "Spaces" and code block support. |
-| **Memos** | Thought Stream | Privacy-first micro-blogging tool for capturing fleeting ideas. |
+| **Memos** | Thought Stream | Privacy-first micro-blogging tool, perfect for capturing fleeting ideas. |
 | **Vikunja** | Task Management | To-do list with Kanban boards and Gantt charts. |
-| **Karakeep** | Web Archiving | Bookmarks URLs, caches content, and uses AI to auto-tag/summarize. |
+| **Karakeep** | Web Archiving | Bookmarks URLs, caches content, and uses local Ollama to auto-tag/summarize. |
 | **Radicale** | CalDAV/CardDAV | Syncs calendars and contacts across devices. |
 | **Glance** | Startpage | Dashboard aggregating RSS, calendar events, and service status. |
 
@@ -203,7 +203,7 @@ The "CFO" of the homelab.
 | Service | Function | Configuration |
 | --- | --- | --- |
 | **Ghostfolio** | Wealth Management | Tracks net worth across assets (Stocks, Crypto) privacy-first. |
-| **Maybe** | Personal Finance | Budgeting and expense tracker (Self-hosted fork). |
+| **Maybe** | Personal Finance | Budgeting and expense tracker. |
 
 ---
 
@@ -214,10 +214,10 @@ The "Logistics" layer.
 | Service | Function | Configuration |
 | --- | --- | --- |
 | **FileBrowser** | Web Interface | Web-based file manager for uploads/downloads to the SSD. |
-| **Syncthing** | Synchronization | Decentralized sync between Pi, PC, and Mobile (BEP protocol). |
-| **QBittorrent** | P2P Client | Manages downloads via VPN for ISOs/Media. |
-| **JDownloader** | DDL Client | Headless container for direct download links. |
-| **Vaultwarden** | Password Manager | Rust implementation of Bitwarden. Stores credentials locally. |
+| **Syncthing** | Synchronization | Decentralized sync between Pi, and PC. |
+| **qBittorrent** | P2P Client | Manages downloads through VPN for ISOs/Media. |
+| **jDownloader** | DDL Client | Headless container for direct download links. |
+| **Vaultwarden** | Password Manager | Self-hosted Bitwarden. Stores credentials locally. |
 
 ---
 
@@ -228,17 +228,50 @@ The "Logistics" layer.
 Instead of opaque Docker volumes, services bind-mount specific host directories located on the 1TB SSD. This ensures data remains accessible as standard files.
 
 ```text
-/mnt/ssd/storage
-├── Downloads/      # Ingress for JDownloader/QBittorrent
-├── Gallery/        # Immich storage (Originals + Thumbs)
-├── Media/
-│   ├── Books/      # Target for Kavita
-│   ├── Music/      # Target for Navidrome
-│   └── Resources/  # Kiwix ZIM files
-├── Personal/
-│   ├── Code/       # Git Repos
-│   └── Documents/  # General file storage
-
+~/homelab
+├── containers/                 # Application Stacks (Docker Compose)
+│   ├── beszel/                 # Monitoring Hub & Agent
+│   ├── cup/                    # Container Update Project
+│   ├── docmost/                # Wiki & Documentation
+│   ├── filebrowser/            # Web File Manager
+│   ├── ghostfolio/             # Wealth Management
+│   ├── gitea/                  # Git Server
+│   ├── glance/                 # Startpage Dashboard
+│   ├── immich/                 # Photos & ML Pipeline
+│   ├── jdownloader/            # DDL Manager
+│   ├── karakeep/               # Bookmarks & Archiving
+│   ├── kavita/                 # Manga & eBooks
+│   ├── kiwix/                  # Offline Knowledge (ZIM)
+│   ├── maybe/                  # Finance Tracker
+│   ├── memos/                  # Micro-blogging
+│   ├── navidrome/              # Music Streaming
+│   ├── nginx/                  # Reverse Proxy
+│   ├── ollama/                 # Local LLM Backend
+│   ├── openspeedtest/          # LAN Speed Testing
+│   ├── openwebui/              # AI Chat Frontend
+│   ├── pihole/                 # DNS & AdBlock
+│   ├── qbittorrent/            # P2P Client
+│   ├── radicale/               # Calendar & Contacts
+│   ├── speedtest/              # WAN Tracker
+│   ├── stremio/                # Video Streaming
+│   ├── syncthing/              # Backup Synchronization
+│   ├── uptimekuma/             # Uptime Monitoring
+│   ├── vaultwarden/            # Password Manager
+│   └── vikunja/                # Task Management
+│ 
+├── portainer/                  # Orchestration GUI
+│   └── docker-compose.yml
+│ 
+└── storage/                    # Persistent Data (Bind Mount Targets)
+    ├── Downloads/              # Ingress for JDownloader/QBittorrent
+    ├── Gallery/                # Target for Immich (Originals)
+    ├── Media/
+    │   ├── Books/              # Target for Kavita
+    │   ├── Music/              # Target for Navidrome
+    │   └── Resources/          # Target for Kiwix
+    └── Personal/
+        ├── Code/               # Target for Gitea Repos
+        └── Documents/          # General File Storage
 ```
 
 ### Networking Strategy
@@ -254,33 +287,43 @@ Instead of opaque Docker volumes, services bind-mount specific host directories 
 The deployment utilizes Docker Compose for modularity. Below is an example snippet showing the isolation of the Productivity Stack.
 
 ```yaml
-version: '3.8'
-
 services:
   docmost:
     image: docmost/docmost:latest
-    container_name: docmost
-    restart: unless-stopped
     depends_on:
-      - docmost-db
-      - docmost-redis
+      - db
+      - redis
     environment:
-      APP_URL: "[http://docs.spaceadler.local](http://docs.spaceadler.local)"
-      DATABASE_URL: "postgresql://docmost:password@docmost-db:5432/docmost"
-    networks:
-      - internal_net
-
-  docmost-db:
-    image: postgres:16-alpine
+      APP_URL: "http://100.000.00.00:3000" # ip address with port number, Nginx and the Pi-hole will resolve it. just make sure to add an entry on both.
+      APP_SECRET: "REPLACE_WITH_LONG_SECRET"
+      DATABASE_URL: "postgresql://docmost:STRONG_DB_PASSWORD@db:5432/docmost?schema=public"
+      REDIS_URL: "redis://redis:6379"
+    ports:
+      - "3000:3000"
     restart: unless-stopped
     volumes:
-      - ./data/db:/var/lib/postgresql/data
-    networks:
-      - internal_net
+      - docmost:/app/data/storage
 
-networks:
-  internal_net:
-    driver: bridge
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: docmost
+      POSTGRES_USER: docmost
+      POSTGRES_PASSWORD: STRONG_DB_PASSWORD
+    restart: unless-stopped
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+volumes:
+  docmost:
+  db_data:
+  redis_data:
 
 ```
 
@@ -292,12 +335,12 @@ The system employs a rigorous **3-2-1 Backup Strategy**.
 
 1. **Layer 1: Local Sync (Hot Storage)**
 * **Tool:** Syncthing.
-* **Mechanism:** Real-time sync of `/storage` and `docker-compose` configs to a local Windows Workstation.
+* **Mechanism:** Real-time sync of `/storage` folders to a local Windows computer, as well as a manual copy of the `/containers` folder.
 
 
 2. **Layer 2: Cloud Encryption (Cold Storage)**
 * **Tool:** Filen (Zero-Knowledge).
-* **Mechanism:** The Windows workstation automatically encrypts and uploads the Syncthing target folder to the cloud.
+* **Mechanism:** The Windows computer automatically encrypts and uploads the `/storage` and `/containers` folders to the cloud.
 
 
 3. **Layer 3: Disaster Recovery**
