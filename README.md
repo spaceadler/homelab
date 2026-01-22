@@ -84,9 +84,9 @@ graph TD
         subgraph Containers [" Docker Containers "]
             Music["Navidrome<br/>(Port 4533)"]:::service
             Immich["Immich<br/>(Port 2283)"]:::service
-            AI["OpenWebUI<br/>(Port 3000)"]:::service
+            AI["OpenWebUI<br/>(Port 3340)"]:::service
             Files["FileBrowser<br/>(Port 8080)"]:::service
-            Docs["Docmost<br/>(Port 3000)"]:::service
+            Other["Other<br/>(Port XXXX)"]:::service
         end
     end
 
@@ -107,7 +107,7 @@ graph TD
     Nginx -->|"Photos"| Immich
     Nginx -->|"Chat"| AI
     Nginx -->|"Files"| Files
-    Nginx -->|"Wiki"| Docs
+    Nginx -->|"..."| Other
 
     %% Style the Host box
     class Host host;
