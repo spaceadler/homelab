@@ -55,11 +55,13 @@ The network topology is designed to prioritize rigorous security without sacrifi
 ```mermaid
 graph TD
     %% STYLING
-    classDef client fill:#ffeba1,stroke:#fbc02d,stroke-width:2px,color:#000;
-    classDef dns fill:#b3e5fc,stroke:#0288d1,stroke-width:2px,color:#000;
-    classDef proxy fill:#e1bee7,stroke:#7b1fa2,stroke-width:2px,color:#000;
-    classDef service fill:#f5f5f5,stroke:#9e9e9e,stroke-width:1px,color:#000;
-    classDef mesh fill:#e0f2f1,stroke:#00695c,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef client fill:#ffffff,stroke:#000000,stroke-width:2px;
+    classDef dns fill:#ffffff,stroke:#000000,stroke-width:2px,stroke-dasharray: 2 2;
+    classDef proxy fill:#ffffff,stroke:#000000,stroke-width:2px;
+    classDef service fill:#ffffff,stroke:#000000,stroke-width:1px;
+    
+    %% THE BLACK MESH STYLE
+    classDef mesh fill:#f5f5f5,stroke:#000000,stroke-width:3px,stroke-dasharray: 5 5;
 
     %% --- THE SECURE BOX ---
     subgraph Mesh ["🔒 Tailscale Encrypted Mesh Network (No Public Ingress)"]
@@ -90,14 +92,14 @@ graph TD
     PiHole -.->|"2. Resolution<br/>'It is at 100.x.y.z'"| User
 
     %% Step 2: Traffic
-    User ==>|"3. HTTP Request<br/>Host: music.spaceadler.local"| Nginx
+    User ==>|"3. HTTP Request<br/>Host: music.local"| Nginx
 
     %% Step 3: Routing
-    Nginx -->|"Host = music.spaceadler.local<br/>Proxy to :4533"| Music
-    Nginx -->|"Host = gallery.spaceadler.local<br/>Proxy to :2283"| Immich
-    Nginx -->|"Host = chat.spaceadler.local<br/>Proxy to :3000"| AI
-    Nginx -->|"Host = files.spaceadler.local<br/>Proxy to :8080"| Files
-    Nginx -->|"Host = docs.spaceadler.local<br/>Proxy to :3000"| Docs
+    Nginx -->|"Host = music...<br/>Proxy to :4533"| Music
+    Nginx -->|"Host = gallery...<br/>Proxy to :2283"| Immich
+    Nginx -->|"Host = chat...<br/>Proxy to :3000"| AI
+    Nginx -->|"Host = files...<br/>Proxy to :8080"| Files
+    Nginx -->|"Host = docs...<br/>Proxy to :3000"| Docs
 
     %% Apply Mesh Style
     class Mesh mesh;
