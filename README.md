@@ -67,13 +67,13 @@ graph TD
     classDef proxy fill:#9B59B6,stroke:#6C3483,stroke-width:2px,color:#fff;
 
     %% SERVICES (The Containers) -> Currently Light Grey/White
-    classDef service fill:#ECF0F1,stroke:#7F8C8D,stroke-width:2px,color:#2C3E50;
+    classDef service fill:#2C3E50,stroke:#7F8C8D,stroke-width:2px,color:#2C3E50;
 
     %% VPN (The Tailscale Box) -> Currently Deep Midnight Blue
-    classDef vpn fill:#00004B,stroke:#27AE60,stroke-width:2px,color:#fff; 
+    classDef vpn fill:#00004B,stroke:#00004B,stroke-width:2px,color:#fff; 
 
     %% HOST (The Raspberry Pi Box) -> Currently White with Dashed Border
-    classDef host fill:#ffffff,stroke:#BDC3C7,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef host fill:#000000,stroke:#BDC3C7,stroke-width:2px,stroke-dasharray: 5 5;
 
     %% NODES
     User["Client Device<br/>(Phone / Laptop)"]:::client
