@@ -24,7 +24,7 @@
 
 ## Architectural Overview & Philosophy
 
-The `sovereign-homelab` repository represents a radical departure from the prevailing model of digital consumption, which relies heavily on centralized, rent-seeking Cloud Service Providers (CSPs). In the current digital epoch, users typically lease access to their own data—photos, documents, and financial records, paying with privacy and monthly subscriptions.
+The `sovereign-homelab` repository represents a radical departure from the prevailing model of digital consumption, which relies heavily on centralized, rent-seeking Cloud Service Providers (CSPs). In the current digital epoch, users typically lease access to their own data, like photos, documents, and sensetive financial/tax records, paying with privacy and monthly subscriptions.
 The term "If you're not buying a product, then you're the product" no longer works as most if not all major tech companies happily bill you while training their AI on *your* data.
 This project inverts that dynamic, establishing a "First Principles" architecture where the user retains absolute authority over the data lifecycle, compute resources, and access control lists (ACLs).
 
@@ -43,7 +43,7 @@ The operational state of the system is defined declaratively. The `docker-compos
 
 ## Network Topology & Security Model
 
-The network topology is designed to prioritize rigorous security without sacrificing the ease of use typically associated with local area networks. The Tailscale daemon runs on the Host Node (Raspberry Pi), advertising the device to the encrypted mesh. Client devices (phones, laptops, tablets) connect to this mesh to access services, effectively flattening the network geography—the user connects to spaceadler.local identically whether they are in the living room or on a different continent.
+The network topology is designed to prioritize rigorous security without sacrificing the ease of use typically associated with local area networks. The Tailscale daemon runs on the Host Node (Raspberry Pi), advertising the device to the encrypted mesh. Client devices (phones, laptops, tablets) connect to this mesh to access services, effectively flattening the network geography. The user connects to spaceadler.local identically whether they are in the living room or on a different continent.
 
 ### Mermaid Topology Diagram
 
@@ -187,7 +187,7 @@ System health and monitoring.
 | Service | Function | Configuration |
 | --- | --- | --- |
 | **Beszel** | Monitoring | A specialized hub-and-agent monitor designed for low-resource environments. The Agent runs on the host to scrape Docker stats, disk I/O, and CPU temperatures. The Hub (web UI) visualizes historical data, critical for diagnosing thermal throttling on the Pi. Accessible via stats.spaceadler.local. |
-| **Uptime Kuma** | Pings all internal services (HTTP/TCP) every 60 seconds. If a container like Nginx or Immich goes down, it triggers alerts (via Ntfy or Telegram). It provides a sleek status dashboard at uptime.spaceadler.local. |
+| **Uptime Kuma** | Status Page & Alerting | Pings all internal services (HTTP/TCP) every 60 seconds. If a container like Nginx or Immich goes down, it triggers alerts (via Ntfy or Telegram). It provides a sleek status dashboard at uptime.spaceadler.local. |
 | **Cup** | Image Updater | Scans Docker Hub and GHCR for new image digests. Unlike Watchtower which auto-updates (risking breakage), Cup provides a dashboard to review changelogs before applying updates. It ensures the stack remains secure but stable. |
 | **Portainer** | Orchestration | Provides a GUI for managing Docker stacks, viewing container logs, and executing shell commands inside containers. It is the primary tool for day-to-day management and debugging of the docker-compose stacks. |
 | **OpenSpeedTest** | LAN Testing | A lightweight HTML5 speed test server. Used to verify internal LAN throughput and WiFi bottlenecks between the client device and the Pi, independent of ISP performance. |
