@@ -53,7 +53,7 @@ The network topology is designed to prioritize rigorous security without sacrifi
 ### Mermaid Topology Diagram
 
 ```mermaid
-graph TD
+    graph TD
     %% --- STYLING DEFINITIONS ---
     classDef client fill:#ffeba1,stroke:#fbc02d,stroke-width:2px,color:#000;
     classDef vpn fill:#212121,stroke:#000,stroke-width:2px,color:#fff;
@@ -64,78 +64,78 @@ graph TD
 
     %% --- NODES ---
     
-    User[Client Device<br/>(Phone / Laptop)]:::client
+    User["Client Device<br/>(Phone / Laptop)"]:::client
     
     subgraph Network [" 🔒 Secure Mesh Network "]
-        TS[Tailscale Interface<br/>100.x.y.z]:::vpn
+        TS["Tailscale Interface<br/>100.x.y.z"]:::vpn
     end
 
     subgraph Host [" ⚡ Raspberry Pi 4 Host "]
         
         %% GATEKEEPERS
         subgraph Gatekeepers [" Gatekeepers "]
-            PiHole[Pi-Hole<br/>DNS Resolver]:::dns
-            Nginx[Nginx<br/>Reverse Proxy]:::proxy
+            PiHole["Pi-Hole<br/>DNS Resolver"]:::dns
+            Nginx["Nginx<br/>Reverse Proxy"]:::proxy
         end
 
         %% CLUSTER: AI & INTELLIGENCE
         subgraph C_AI [" 🧠 AI & Intelligence "]
-            Ollama[Ollama<br/>LLM Backend]:::service
-            OpenWeb[OpenWebUI<br/>Chatbot]:::service
+            Ollama["Ollama<br/>LLM Backend"]:::service
+            OpenWeb["OpenWebUI<br/>Chatbot"]:::service
         end
 
         %% CLUSTER: MEDIA
         subgraph C_Media [" 🍿 Media & Streaming "]
-            Immich[Immich<br/>Photos]:::service
-            Navi[Navidrome<br/>Music]:::service
-            Strem[Stremio<br/>Video]:::service
-            Kav[Kavita<br/>Books]:::service
-            Wiki[Kiwix<br/>Offline Wiki]:::service
+            Immich["Immich<br/>Photos"]:::service
+            Navi["Navidrome<br/>Music"]:::service
+            Strem["Stremio<br/>Video"]:::service
+            Kav["Kavita<br/>Books"]:::service
+            Wiki["Kiwix<br/>Offline Wiki"]:::service
         end
 
         %% CLUSTER: BRAIN
         subgraph C_Brain [" 📝 Knowledge & Productivity "]
-            Doc[Docmost<br/>Wiki]:::service
-            Memo[Memos<br/>Notes]:::service
-            Vik[Vikunja<br/>Tasks]:::service
-            Kara[Karakeep<br/>Bookmarks]:::service
-            Rad[Radicale<br/>Calendar]:::service
-            Glance[Glance<br/>Dashboard]:::service
+            Doc["Docmost<br/>Wiki"]:::service
+            Memo["Memos<br/>Notes"]:::service
+            Vik["Vikunja<br/>Tasks"]:::service
+            Kara["Karakeep<br/>Bookmarks"]:::service
+            Rad["Radicale<br/>Calendar"]:::service
+            Glance["Glance<br/>Dashboard"]:::service
         end
 
         %% CLUSTER: FINANCE
         subgraph C_Fin [" 💰 Finance "]
-            Ghost[Ghostfolio<br/>Stocks]:::service
-            Maybe[Maybe<br/>Budget]:::service
+            Ghost["Ghostfolio<br/>Stocks"]:::service
+            Maybe["Maybe<br/>Budget"]:::service
         end
 
         %% CLUSTER: OPS
         subgraph C_Ops [" 🛠️ Ops & Storage "]
-            Vault[Vaultwarden<br/>Passwords]:::service
-            File[FileBrowser<br/>Files]:::service
-            Sync[Syncthing<br/>Backups]:::service
-            Port[Portainer<br/>Docker UI]:::service
-            Kuma[Uptime Kuma<br/>Status]:::service
-            Beszel[Beszel<br/>Metrics]:::service
-            DL[Downloader<br/>JDownloader/QB]:::service
+            Vault["Vaultwarden<br/>Passwords"]:::service
+            File["FileBrowser<br/>Files"]:::service
+            Sync["Syncthing<br/>Backups"]:::service
+            Port["Portainer<br/>Docker UI"]:::service
+            Kuma["Uptime Kuma<br/>Status"]:::service
+            Beszel["Beszel<br/>Metrics"]:::service
+            DL["Downloader<br/>JDownloader/QB"]:::service
         end
     end
 
     %% --- CONNECTIONS ---
 
     %% 1. CONNECTION
-    User ==>|1. Connects to Mesh| TS
+    User ==>|"1. Connects to Mesh"| TS
 
     %% 2. DNS RESOLUTION (Dotted)
-    TS -.->|2. DNS Query<br/>'service.local'| PiHole
-    PiHole -.->|3. Resolves to<br/>100.x.y.z| TS
+    TS -.->|"2. DNS Query<br/>'service.local'"| PiHole
+    PiHole -.->|"3. Resolves to<br/>100.x.y.z"| TS
 
     %% 3. TRAFFIC ROUTING (Thick)
-    TS ==>|4. HTTPS Request<br/>Host: service.local| Nginx
+    TS ==>|"4. HTTPS Request<br/>Host: service.local"| Nginx
 
     %% 4. PROXY DISPATCH (AI)
     Nginx -->|proxy_pass| OpenWeb
-    OpenWeb -.->|API :11434| Ollama
+    OpenWeb -.->|"API :11434"| Ollama
 
     %% 5. PROXY DISPATCH (MEDIA)
     Nginx -->|:2283| Immich
@@ -164,7 +164,6 @@ graph TD
     Nginx -->|:3001| Kuma
     Nginx -->|:8090| Beszel
     Nginx -->|:5800| DL
-
 ```
 
 ### Traffic Flow Analysis & Packet Lifecycle
