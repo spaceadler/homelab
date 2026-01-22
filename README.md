@@ -59,8 +59,8 @@ graph TD
     classDef dns fill:#2C3E50,stroke:#34495E,stroke-width:2px,color:#fff;
     classDef proxy fill:#2C3E50,stroke:#6C3483,stroke-width:2px,color:#fff;
     classDef service fill:#2C3E50,stroke:#7F8C8D,stroke-width:2px,color:#2C3E50;
-    classDef vpn fill:#2C3E50,stroke:#27AE60,stroke-width:2px,color:#fff; 
-    classDef host fill:#000000,stroke:#BDC3C7,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef vpn fill:#2C3E50,stroke:#2C3E50,stroke-width:2px,color:#fff; 
+    classDef host fill:#34495E,stroke:#2C3E50,stroke-width:2px,stroke-dasharray: 5 5;
 
     %% NODES
     User["Client Device<br/>(Phone / Laptop)"]:::client
