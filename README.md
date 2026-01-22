@@ -53,7 +53,8 @@ The network topology is designed to prioritize rigorous security without sacrifi
 ### Mermaid Topology Diagram
 
 ```mermaid
-graph TD%% STYLING
+graph TD
+    %% STYLING
     classDef client fill:#ffeba1,stroke:#fbc02d,stroke-width:2px,color:#000;
     %% CHANGED: DNS scheme set to black fill, white stroke, white text
     classDef dns fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff;
