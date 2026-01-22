@@ -83,8 +83,8 @@ graph TD
     User -.->|"1. DNS Query<br/>'Where is music.local?'"| PiHole
     PiHole -.->|"2. Resolution<br/>'It is at 100.x.y.z'"| User
 
-    %% Step 2: Traffic
-    User ==>"3. HTTP Request<br/>Host: music.local"| Nginx
+    %% Step 2: Traffic (Fixed Syntax Here)
+    User ==>|"3. HTTP Request<br/>Host: music.local"| Nginx
 
     %% Step 3: Routing
     Nginx -->|"Host = music...<br/>Proxy to :4533"| Music
