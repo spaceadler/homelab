@@ -6,7 +6,7 @@
 ![Containerization](https://img.shields.io/badge/Containerization-Docker-blue)
 ![Network](https://img.shields.io/badge/Network-Tailscale-black)
 ![OS](https://img.shields.io/badge/OS-Debian-red)
-![Architecture](https://img.shields.io/badge/Architecture-ARM64-brightgreen)
+![Architecture](https://img.shields.io/badge/Architecture-ARM64-brightpurple)
 
 ## Table of Contents
 1. [Architectural Overview & Philosophy](#architectural-overview--philosophy)
