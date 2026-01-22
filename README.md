@@ -54,13 +54,26 @@ The network topology is designed to prioritize rigorous security without sacrifi
 
 ```mermaid
 graph TD
-    %% STYLING
+%% --- STYLING DEFINITIONS ---
+    
+    %% CLIENT (The User Device) -> Currently Bright Blue
+    %% fill: Background Color | stroke: Border Color | color: Text Color
     classDef client fill:#4A90E2,stroke:#2E5C8A,stroke-width:2px,color:#fff;
+
+    %% DNS (Pi-Hole) -> Currently Dark Navy/Grey
     classDef dns fill:#2C3E50,stroke:#34495E,stroke-width:2px,color:#fff;
-    classDef proxy fill:#2C3E50,stroke:#6C3483,stroke-width:2px,color:#fff;
-    classDef service fill:#2C3E50,stroke:#7F8C8D,stroke-width:2px,color:#2C3E50;
-    classDef vpn fill:#2C3E50,stroke:#27AE60,stroke-width:2px,color:#fff; 
-    classDef host stroke:#BDC3C7,stroke-width:2px,stroke-dasharray: 5 5;
+
+    %% PROXY (Nginx) -> Currently Purple
+    classDef proxy fill:#9B59B6,stroke:#6C3483,stroke-width:2px,color:#fff;
+
+    %% SERVICES (The Containers) -> Currently Light Grey/White
+    classDef service fill:#ECF0F1,stroke:#7F8C8D,stroke-width:2px,color:#2C3E50;
+
+    %% VPN (The Tailscale Box) -> Currently Deep Midnight Blue
+    classDef vpn fill:#00004B,stroke:#27AE60,stroke-width:2px,color:#fff; 
+
+    %% HOST (The Raspberry Pi Box) -> Currently White with Dashed Border
+    classDef host fill:#ffffff,stroke:#BDC3C7,stroke-width:2px,stroke-dasharray: 5 5;
 
     %% NODES
     User["Client Device<br/>(Phone / Laptop)"]:::client
