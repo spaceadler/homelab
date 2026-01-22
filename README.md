@@ -11,11 +11,11 @@ This repository documents the infrastructure and configuration of my private sel
 The system orchestrates **17+ services** using Docker containers, accessible securely from anywhere via a mesh VPN (Tailscale) without exposing ports to the public internet.
 
 ## Architecture
-* **Hardware:** [Raspberry Pi 4B 8GB, 1TB USB SSD]
-* **OS:** [Raspian OS]
-* **Networking:** Tailscale (Mesh VPN) with ACLs.
+* **Hardware:** Raspberry Pi 4B 8GB, 1TB USB SSD
+* **OS:** Raspian OS
+* **Networking:** Tailscale (Mesh VPN).
 * **Orchestration:** Docker Compose & Portainer.
-* **Reverse Proxy:** [Nginx Proxy Manager]
+* **Reverse Proxy:** Nginx Proxy Manager
 
 ### Network Logic
 Traffic is routed internally using a reverse proxy. Access is restricted to devices authenticated via the Tailscale overlay network.
