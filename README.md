@@ -57,10 +57,10 @@ graph TD
     %% STYLING
     classDef client fill:#4A90E2,stroke:#2E5C8A,stroke-width:2px,color:#fff;
     classDef dns fill:#2C3E50,stroke:#34495E,stroke-width:2px,color:#fff;
-    classDef proxy fill:#9B59B6,stroke:#6C3483,stroke-width:2px,color:#fff;
-    classDef service fill:#ECF0F1,stroke:#7F8C8D,stroke-width:2px,color:#2C3E50;
-    classDef vpn fill:#00004B,stroke:#27AE60,stroke-width:2px,color:#fff; 
-    classDef host fill:#1D2E28,stroke:#BDC3C7,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef proxy fill:#2C3E50,stroke:#6C3483,stroke-width:2px,color:#fff;
+    classDef service fill:#2C3E50,stroke:#7F8C8D,stroke-width:2px,color:#2C3E50;
+    classDef vpn fill:#2C3E50,stroke:#2C3E50,stroke-width:2px,color:#fff; 
+    classDef host fill:#000000,stroke:#BDC3C7,stroke-width:2px,stroke-dasharray: 5 5;
 
     %% NODES
     User["Client Device<br/>(Phone / Laptop)"]:::client
