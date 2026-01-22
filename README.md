@@ -1,6 +1,6 @@
 # sovereign-homelab
 
-> **Mission Statement:** To engineer a comprehensive, self-sovereign digital infrastructure architected on first principles, reclaiming data ownership through physically isolated hardware, encrypted mesh networking, and auditable Infrastructure as Code (IaC), thereby eliminating reliance on rent-seeking centralized SaaS providers.
+> Engineering a comprehensive, self-sovereign digital infrastructure architected on first principles, reclaiming data ownership through physically isolated hardware, encrypted mesh networking, and auditable Infrastructure as Code (IaC), thereby eliminating reliance on rent-seeking centralized SaaS providers.
 
 ![Status](https://img.shields.io/badge/Status-Active-success)
 ![Containerization](https://img.shields.io/badge/Containerization-Docker-blue)
