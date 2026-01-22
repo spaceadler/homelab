@@ -178,7 +178,7 @@ The bouncers and traffic controllers.
 | **Nginx** | Reverse Proxy | Maps internal Docker ports (e.g., 3000, 8080) to user-friendly subdomains (docmost.spaceadler.local). Handles SSL termination, allowing encrypted HTTPS connections even for local traffic. The configuration uses proxy_pass directives to route traffic based on the incoming Host header. |
 | **Pi-hole** | DNS & Ad Blocking | Serves as the authoritative DNS server for the .local domain. It is configured with Local DNS Records (CNAME/A) to rewrite *.spaceadler.local to the internal Tailscale IP of the host. Additionally, it blocks tracking telemetry and ads at the network level for all devices connected to the VPN. |
 | **Ollama** | Local LLM Backend | Provides the intelligence layer for AI-enabled apps like Karakeep and Docmost. By running models like llama3 or mistral locally, queries remain private. The service exposes an API on port 11434 used by other containers. |
-| **OpenWebUI** | A user-friendly, ChatGPT-like frontend interacting with the local Ollama instance. It provides a history of conversations and allows parameter tuning (temperature, context window) for the models. Accessible via chat.spaceadler.local. |
+| **OpenWebUI** | Chat Interface | A user-friendly, ChatGPT-like frontend interacting with the local Ollama instance. It provides a history of conversations and allows parameter tuning (temperature, context window) for the models. Accessible via chat.spaceadler.local. |
 
 ### 2. Observability & Maintenance
 
