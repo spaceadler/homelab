@@ -309,41 +309,49 @@ Below is a Docmost `docker-compose.yml` example.
 services:
   docmost:
     image: docmost/docmost:latest
+    container_name: docmost            # explicit name for easier log management
     depends_on:
-      - db
-      - redis
+      - db                             # waits for postgres to start before launching
+      - redis                          # waits for redis cache to initialize
     environment:
-      APP_URL: "http://100.000.00.00:3000" # ip address with port number, Nginx and the Pi-hole will resolve it. just make sure to add an entry on both.
-      APP_SECRET: "REPLACE_WITH_LONG_SECRET"
+      # NETWORK CONFIGURATION
+      # The internal Tailscale IP. Nginx proxies traffic here; Pi-hole resolves the DNS.
+      APP_URL: "http://100.x.y.z:3000" 
+      
+      # SECURITY
+      # Critical: Generate a random 32-char string (openssl rand -hex 32)
+      APP_SECRET: "REPLACE_WITH_LONG_SECRET" 
+      
+      # DATABASE CONNECTIONS
+      # Connects to the 'db' service defined below on internal Docker network
       DATABASE_URL: "postgresql://docmost:STRONG_DB_PASSWORD@db:5432/docmost?schema=public"
       REDIS_URL: "redis://redis:6379"
     ports:
-      - "3000:3000"
-    restart: unless-stopped
+      - "3000:3000"                    # Exposes port 3000 to the host (accessible via Tailscale IP)
+    restart: unless-stopped            # Auto-heals if the process crashes
     volumes:
-      - docmost:/app/data/storage
+      - docmost:/app/data/storage      # Persists uploads/attachments to a named volume
 
   db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: docmost
-      POSTGRES_USER: docmost
-      POSTGRES_PASSWORD: STRONG_DB_PASSWORD
+    image: postgres:16-alpine          # Alpine variant for smaller footprint
     restart: unless-stopped
+    environment:
+      POSTGRES_DB: docmost             # Auto-creates this database on first init
+      POSTGRES_USER: docmost
+      POSTGRES_PASSWORD: STRONG_DB_PASSWORD # Must match the DATABASE_URL above
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data # Critical: Persists the actual database files
 
   redis:
     image: redis:7.2-alpine
     restart: unless-stopped
     volumes:
-      - redis_data:/data
+      - redis_data:/data               # Persists the cache state (optional but recommended)
 
 volumes:
-  docmost:
-  db_data:
-  redis_data:
-
+  docmost:                             # Storage for file uploads
+  db_data:                             # Storage for the SQL database
+  redis_data:                          # Storage for Redis dump.rdb
 ```
 
 ## Backup, Redundancy, & Disaster Recovery
