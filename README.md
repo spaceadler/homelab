@@ -73,7 +73,7 @@ graph TD
     classDef vpn fill:#00004B,stroke:#00004B,stroke-width:2px,color:#fff; 
 
     %% HOST (The Raspberry Pi Box) -> Currently White with Dashed Border
-    classDef host fill:##0D1117,stroke:#BDC3C7,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef host fill:#0D1117,stroke:#BDC3C7,stroke-width:2px,stroke-dasharray: 5 5;
 
     %% NODES
     User["Client Device<br/>(Phone / Laptop)"]:::client
