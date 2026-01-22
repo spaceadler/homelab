@@ -59,7 +59,7 @@ graph TD
     classDef dns fill:#2C3E50,stroke:#34495E,stroke-width:2px,color:#fff;
     classDef proxy fill:#9B59B6,stroke:#6C3483,stroke-width:2px,color:#fff;
     classDef service fill:#ECF0F1,stroke:#7F8C8D,stroke-width:2px,color:#2C3E50;
-    classDef mesh fill:#000000,stroke:#27AE60,stroke-width:2px,stroke-dasharray:
+    classDef mesh fill:#00008B,stroke:#27AE60,stroke-width:2px,stroke-dasharray:
 
     %% --- THE SECURE BOX ---
     subgraph Mesh ["🔒 Tailscale Encrypted Mesh Network (No Public Ingress)"]
