@@ -275,10 +275,8 @@ The storage architecture utilizes a Directory-as-Volume pattern. Instead of usin
 │   ├── uptimekuma/             # Uptime Monitoring
 │   ├── vaultwarden/            # Password Manager
 │   └── vikunja/                # Task Management
-│ 
 ├── portainer/                  # Orchestration GUI
 │   └── docker-compose.yml
-│ 
 └── storage/                    # Persistent Data (Bind Mount Targets)
     ├── Downloads/              # Ingress for JDownloader/QBittorrent
     ├── Gallery/                # Target for Immich (Originals)
