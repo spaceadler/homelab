@@ -59,39 +59,48 @@ graph TD
     classDef dns fill:#b3e5fc,stroke:#0288d1,stroke-width:2px,color:#000;
     classDef proxy fill:#e1bee7,stroke:#7b1fa2,stroke-width:2px,color:#000;
     classDef service fill:#f5f5f5,stroke:#9e9e9e,stroke-width:1px,color:#000;
+    classDef mesh fill:#e0f2f1,stroke:#00695c,stroke-width:2px,stroke-dasharray: 5 5;
 
-    %% NODES
-    User["Client Device<br/>(Phone / Laptop)"]:::client
-    
-    subgraph Host [" Raspberry Pi Host (100.x.y.z) "]
+    %% --- THE SECURE BOX ---
+    subgraph Mesh ["🔒 Tailscale Encrypted Mesh Network (No Public Ingress)"]
+        direction TB
         
-        PiHole["Pi-Hole<br/>(The Phonebook)"]:::dns
-        Nginx["Nginx Proxy<br/>(The Receptionist)"]:::proxy
+        %% NODES
+        User["Client Device<br/>(Phone / Laptop)"]:::client
         
-        subgraph Containers [" Docker Containers "]
-            Music["Navidrome<br/>(Port 4533)"]:::service
-            Immich["Immich<br/>(Port 2283)"]:::service
-            AI["OpenWebUI<br/>(Port 3000)"]:::service
-            Files["FileBrowser<br/>(Port 8080)"]:::service
-            Docs["Docmost<br/>(Port 3000)"]:::service
+        subgraph Host [" Raspberry Pi Host (100.x.y.z) "]
+            
+            PiHole["Pi-Hole<br/>(The Phonebook)"]:::dns
+            Nginx["Nginx Proxy<br/>(The Receptionist)"]:::proxy
+            
+            subgraph Containers [" Docker Containers "]
+                Music["Navidrome<br/>(Port 4533)"]:::service
+                Immich["Immich<br/>(Port 2283)"]:::service
+                AI["OpenWebUI<br/>(Port 3000)"]:::service
+                Files["FileBrowser<br/>(Port 8080)"]:::service
+                Docs["Docmost<br/>(Port 3000)"]:::service
+            end
         end
     end
 
     %% LOGIC FLOW
     
     %% Step 1: DNS
-    User -.->|"1. DNS Query<br/>'Where is music.local?'"| PiHole
+    User -.->|"1. DNS Query<br/>(Inside Encrypted Tunnel)"| PiHole
     PiHole -.->|"2. Resolution<br/>'It is at 100.x.y.z'"| User
 
-    %% Step 2: Traffic (Fixed Syntax Here)
-    User ==>|"3. HTTP Request<br/>Host: music.local"| Nginx
+    %% Step 2: Traffic
+    User ==>|"3. HTTP Request<br/>Host: music.spaceadler.local"| Nginx
 
     %% Step 3: Routing
-    Nginx -->|"Host = music...<br/>Proxy to :4533"| Music
-    Nginx -->|"Host = gallery...<br/>Proxy to :2283"| Immich
-    Nginx -->|"Host = chat...<br/>Proxy to :3000"| AI
-    Nginx -->|"Host = files...<br/>Proxy to :8080"| Files
-    Nginx -->|"Host = docs...<br/>Proxy to :3000"| Docs
+    Nginx -->|"Host = music.spaceadler.local<br/>Proxy to :4533"| Music
+    Nginx -->|"Host = gallery.spaceadler.local<br/>Proxy to :2283"| Immich
+    Nginx -->|"Host = chat.spaceadler.local<br/>Proxy to :3000"| AI
+    Nginx -->|"Host = files.spaceadler.local<br/>Proxy to :8080"| Files
+    Nginx -->|"Host = docs.spaceadler.local<br/>Proxy to :3000"| Docs
+
+    %% Apply Mesh Style
+    class Mesh mesh;
 ```
 
 ### Traffic Flow Analysis & Packet Lifecycle
