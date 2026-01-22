@@ -54,26 +54,116 @@ The network topology is designed to prioritize rigorous security without sacrifi
 
 ```mermaid
 graph TD
-    %% NODES & STYLES
-    classDef secure fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef internal fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    %% --- STYLING DEFINITIONS ---
+    classDef client fill:#ffeba1,stroke:#fbc02d,stroke-width:2px,color:#000;
+    classDef vpn fill:#212121,stroke:#000,stroke-width:2px,color:#fff;
+    classDef dns fill:#b3e5fc,stroke:#0288d1,stroke-width:2px,color:#000;
+    classDef proxy fill:#e1bee7,stroke:#7b1fa2,stroke-width:2px,color:#000;
+    classDef cluster fill:#ffffff,stroke:#cfd8dc,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef service fill:#f5f5f5,stroke:#9e9e9e,stroke-width:1px,color:#000;
 
-    User[Client Device] -->|WireGuard Encrypted Tunnel| VPN[Tailscale Interface]
+    %% --- NODES ---
     
-    subgraph Host ["Physical Host (Raspberry Pi 4)"]
-        VPN -->|100.x.y.z| Proxy[Nginx Reverse Proxy]
+    User[Client Device<br/>(Phone / Laptop)]:::client
+    
+    subgraph Network [" 🔒 Secure Mesh Network "]
+        TS[Tailscale Interface<br/>100.x.y.z]:::vpn
+    end
+
+    subgraph Host [" ⚡ Raspberry Pi 4 Host "]
         
-        subgraph Docker ["Internal Docker Network"]
-            Proxy -->|Port 80| S1[Docmost]
-            Proxy -->|Port 53/80| S2[Pi-Hole]
-            Proxy -->|Port 2283| S3[Immich]
-            Proxy -->|Port 11434| S4[Ollama]
+        %% GATEKEEPERS
+        subgraph Gatekeepers [" Gatekeepers "]
+            PiHole[Pi-Hole<br/>DNS Resolver]:::dns
+            Nginx[Nginx<br/>Reverse Proxy]:::proxy
+        end
+
+        %% CLUSTER: AI & INTELLIGENCE
+        subgraph C_AI [" 🧠 AI & Intelligence "]
+            Ollama[Ollama<br/>LLM Backend]:::service
+            OpenWeb[OpenWebUI<br/>Chatbot]:::service
+        end
+
+        %% CLUSTER: MEDIA
+        subgraph C_Media [" 🍿 Media & Streaming "]
+            Immich[Immich<br/>Photos]:::service
+            Navi[Navidrome<br/>Music]:::service
+            Strem[Stremio<br/>Video]:::service
+            Kav[Kavita<br/>Books]:::service
+            Wiki[Kiwix<br/>Offline Wiki]:::service
+        end
+
+        %% CLUSTER: BRAIN
+        subgraph C_Brain [" 📝 Knowledge & Productivity "]
+            Doc[Docmost<br/>Wiki]:::service
+            Memo[Memos<br/>Notes]:::service
+            Vik[Vikunja<br/>Tasks]:::service
+            Kara[Karakeep<br/>Bookmarks]:::service
+            Rad[Radicale<br/>Calendar]:::service
+            Glance[Glance<br/>Dashboard]:::service
+        end
+
+        %% CLUSTER: FINANCE
+        subgraph C_Fin [" 💰 Finance "]
+            Ghost[Ghostfolio<br/>Stocks]:::service
+            Maybe[Maybe<br/>Budget]:::service
+        end
+
+        %% CLUSTER: OPS
+        subgraph C_Ops [" 🛠️ Ops & Storage "]
+            Vault[Vaultwarden<br/>Passwords]:::service
+            File[FileBrowser<br/>Files]:::service
+            Sync[Syncthing<br/>Backups]:::service
+            Port[Portainer<br/>Docker UI]:::service
+            Kuma[Uptime Kuma<br/>Status]:::service
+            Beszel[Beszel<br/>Metrics]:::service
+            DL[Downloader<br/>JDownloader/QB]:::service
         end
     end
 
-    %% STYLING
-    class VPN secure;
-    class S1,S2,S3,S4 internal;
+    %% --- CONNECTIONS ---
+
+    %% 1. CONNECTION
+    User ==>|1. Connects to Mesh| TS
+
+    %% 2. DNS RESOLUTION (Dotted)
+    TS -.->|2. DNS Query<br/>'service.local'| PiHole
+    PiHole -.->|3. Resolves to<br/>100.x.y.z| TS
+
+    %% 3. TRAFFIC ROUTING (Thick)
+    TS ==>|4. HTTPS Request<br/>Host: service.local| Nginx
+
+    %% 4. PROXY DISPATCH (AI)
+    Nginx -->|proxy_pass| OpenWeb
+    OpenWeb -.->|API :11434| Ollama
+
+    %% 5. PROXY DISPATCH (MEDIA)
+    Nginx -->|:2283| Immich
+    Nginx -->|:4533| Navi
+    Nginx -->|:8080| Strem
+    Nginx -->|:5000| Kav
+    Nginx -->|:8080| Wiki
+
+    %% 6. PROXY DISPATCH (BRAIN)
+    Nginx -->|:3000| Doc
+    Nginx -->|:5230| Memo
+    Nginx -->|:3456| Vik
+    Nginx -->|:3000| Kara
+    Nginx -->|:5232| Rad
+    Nginx -->|:8080| Glance
+
+    %% 7. PROXY DISPATCH (FINANCE)
+    Nginx -->|:3000| Ghost
+    Nginx -->|:3000| Maybe
+
+    %% 8. PROXY DISPATCH (OPS)
+    Nginx -->|:80| Vault
+    Nginx -->|:8080| File
+    Nginx -->|:8384| Sync
+    Nginx -->|:9000| Port
+    Nginx -->|:3001| Kuma
+    Nginx -->|:8090| Beszel
+    Nginx -->|:5800| DL
 
 ```
 
