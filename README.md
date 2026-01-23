@@ -9,7 +9,7 @@
 ![Architecture](https://img.shields.io/badge/Architecture-ARM64-orange)
 
 ## Table of Contents
-1. [Infrastructure & Services Overview](#infrastructure--services-overviewphilosophy)
+1. [Infrastructure & Services Overview](#infrastructure--services-overview)
 2. [Architectural Overview & Philosophy](#architectural-overview--philosophy)
 3. [Network Topology & Security Model](#network-topology--security-model)
 4. [Hardware Infrastructure](#hardware-infrastructure--provisioning)
