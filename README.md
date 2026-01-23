@@ -9,20 +9,21 @@
 ![Architecture](https://img.shields.io/badge/Architecture-ARM64-orange)
 
 ## Table of Contents
-1. [Architectural Overview & Philosophy](#architectural-overview--philosophy)
-2. [Network Topology & Security Model](#network-topology--security-model)
-3. [Hardware Infrastructure](#hardware-infrastructure--provisioning)
-4. [The Stack: Gateway & Authentication](#the-stack-gateway--authentication)
-5. [The Stack: Observability & Maintenance](#the-stack-observability--maintenance)
-6. [The Stack: Media & Streaming](#the-stack-media--streaming)
-7. [The Stack: Knowledge & Productivity](#the-stack-knowledge--productivity)
-8. [The Stack: Finance & Analytics](#the-stack-finance--analytics)
-9. [The Stack: Storage & Synchronization](#the-stack-storage--synchronization)
-10. [Technical Implementation & Storage Strategy](#technical-implementation--storage-strategy)
-11. [Deployment Strategy (IaC)](#deployment-strategy-infrastructure-as-code)
-12. [Backup & Disaster Recovery](#backup-redundancy--disaster-recovery)
+1. [Infrastructure & Services Overview](#infrastructure--services-overviewphilosophy)
+2. [Architectural Overview & Philosophy](#architectural-overview--philosophy)
+3. [Network Topology & Security Model](#network-topology--security-model)
+4. [Hardware Infrastructure](#hardware-infrastructure--provisioning)
+5. [The Stack: Gateway & Authentication](#the-stack-gateway--authentication)
+6. [The Stack: Observability & Maintenance](#the-stack-observability--maintenance)
+7. [The Stack: Media & Streaming](#the-stack-media--streaming)
+8. [The Stack: Knowledge & Productivity](#the-stack-knowledge--productivity)
+9. [The Stack: Finance & Analytics](#the-stack-finance--analytics)
+10. [The Stack: Storage & Synchronization](#the-stack-storage--synchronization)
+11. [Technical Implementation & Storage Strategy](#technical-implementation--storage-strategy)
+12. [Deployment Strategy (IaC)](#deployment-strategy-infrastructure-as-code)
+13. [Backup & Disaster Recovery](#backup-redundancy--disaster-recovery)
 
-## The Stach in Action
+## Infrastructure & Services Overview
 
 <details>
   <summary>📁 Click to view: Data & File Management</summary>
