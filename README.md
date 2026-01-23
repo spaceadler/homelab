@@ -22,6 +22,66 @@
 11. [Deployment Strategy (IaC)](#deployment-strategy-infrastructure-as-code)
 12. [Backup & Disaster Recovery](#backup-redundancy--disaster-recovery)
 
+## The Stach in Action
+
+<details>
+  <summary>📁 Click to view: Data & File Management</summary>
+
+  ### File_Browser
+  ![File_Browser](docs/screenshots/File_Browser.png)
+
+  ### syncthing
+  ![syncthing](docs/screenshots/syncthing.png)
+
+  ### qB
+  ![qB](docs/screenshots/qB.png)
+</details>
+
+<details>
+  <summary>🧠 Click to view: Knowledge & Productivity</summary>
+
+  ### Docmost
+  ![Docmost](docs/screenshots/Docmost.png)
+
+  ### Memos
+  ![Memos](docs/screenshots/Memos.png)
+
+  ### Vikunja
+  ![Vikunja](docs/screenshots/Vikunja.png)
+
+  ### Glance
+  ![Glance](docs/screenshots/Glance.png)
+</details>
+
+<details>
+  <summary>📊 Click to view: Telemetry & Health</summary>
+
+  ### Beszel
+  ![Beszel](docs/screenshots/Beszel.png)
+
+  ### Uptimekuma
+  ![Uptimekuma](docs/screenshots/Uptimekuma.png)
+
+  ### Cup
+  ![Cup](docs/screenshots/Cup.png)
+</details>
+
+<details>
+  <summary>🏛️ Click to view: Core Infrastructure & Intelligence</summary>
+
+  ### Tailscale
+  ![Tailscale](docs/screenshots/Tailscale.png)
+
+  ### Nginx
+  ![Nginx](docs/screenshots/Nginx.png)
+
+  ### Pi-hole
+  ![Pi-hole](docs/screenshots/Pi-hole.png)
+
+  ### OpenWebUI
+  ![OpenWebUI](docs/screenshots/OpenWebUI.png)
+</details>
+
 ## Architectural Overview & Philosophy
 
 The `sovereign-homelab` repository represents a radical departure from the prevailing model of digital consumption, which relies heavily on centralized, rent-seeking Cloud Service Providers (CSPs). In the current digital epoch, users typically lease access to their own data, like photos, documents, and sensetive financial/tax records, paying with privacy and monthly subscriptions.
@@ -168,22 +228,6 @@ The bouncers and traffic controllers.
 | **Ollama** | Local LLM Backend | Provides the intelligence layer for AI-enabled apps like Karakeep and Docmost. By running models like llama3 or mistral locally, queries remain private. The service exposes an API on port 11434 used by other containers. |
 | **OpenWebUI** | Chat Interface | A user-friendly, ChatGPT-like frontend interacting with the local Ollama instance. It provides a history of conversations and allows parameter tuning (temperature, context window) for the models. Accessible via chat.spaceadler.local. |
 
-<details>
-  <summary>🏛️ Click to view: Core Infrastructure & Intelligence</summary>
-
-  ### Tailscale
-  ![Tailscale](docs/screenshots/Tailscale.png)
-
-  ### Nginx
-  ![Nginx](docs/screenshots/Nginx.png)
-
-  ### Pi-hole
-  ![Pi-hole](docs/screenshots/Pi-hole.png)
-
-  ### OpenWebUI
-  ![OpenWebUI](docs/screenshots/OpenWebUI.png)
-</details>
-
 
 ### 2. Observability & Maintenance
 
@@ -197,20 +241,6 @@ System health and monitoring.
 | **Portainer** | Orchestration | Provides a GUI for managing Docker stacks, viewing container logs, and executing shell commands inside containers. It is the primary tool for day-to-day management and debugging of the docker-compose stacks. |
 | **OpenSpeedTest** | LAN Testing | A lightweight HTML5 speed test server. Used to verify internal LAN throughput and WiFi bottlenecks between the client device and the Pi, independent of ISP performance. |
 | **Speedtest** | WAN Monitoring | Runs scheduled CLI speed tests against external Ookla servers to log WAN performance over time. This data is useful for verifying ISP SLAs and detecting throttling. |
-
-<details>
-  <summary>📊 Click to view: Telemetry & Health</summary>
-
-  ### Beszel
-  ![Beszel](docs/screenshots/Beszel.png)
-
-  ### Uptimekuma
-  ![Uptimekuma](docs/screenshots/Uptimekuma.png)
-
-  ### Cup
-  ![Cup](docs/screenshots/Cup.png)
-</details>
-
 
 ### 3. Media & Streaming
 The "Entertainment Center." This cluster replaces Spotify, Netflix, iCloud/Google Photos, and Kindle, streaming content directly from the SSD to any device on the Tailscale mesh.
@@ -253,22 +283,6 @@ The "Second Brain." This cluster replaces Notion, Todoist, and Google Calendar, 
 | **Radicale** | CalDAV/CardDAV | A lightweight CalDAV/CardDAV server. It syncs calendars and contact lists across mobile and desktop devices, removing the need for Google/iCloud sync services. Accessed via calendar.spaceadler.local. |
 | **Glance** | Startpage | A highly customizable dashboard that aggregates RSS feeds, calendar events from Radicale, and service status from Uptime Kuma into a single "Glance" view. Accessed via home.spaceadler.local. |
 
-<details>
-  <summary>🧠 Click to view: Knowledge & Productivity</summary>
-
-  ### Docmost
-  ![Docmost](docs/screenshots/Docmost.png)
-
-  ### Memos
-  ![Memos](docs/screenshots/Memos.png)
-
-  ### Vikunja
-  ![Vikunja](docs/screenshots/Vikunja.png)
-
-  ### Glance
-  ![Glance](docs/screenshots/Glance.png)
-</details>
-
 ### Finance & Analytics
 
 The "CFO" of the homelab.
@@ -299,19 +313,6 @@ The "Logistics" layer. This cluster handles file movement, downloading, and data
 | **qBittorrent** | P2P Client | Manages peer-to-peer downloads. It is integrated with the VPN to ensure privacy during retrieval of Linux ISOs and other media. Accessed via qb.spaceadler.local. |
 | **jDownloader** | DDL Client | A headless container specialized for Direct Download Link (DDL) sites, YouTube rips, and other non-torrent content. Managed via the MyJDownloader web interface. Accessed via download.spaceadler.local. |
 | **Vaultwarden** | Password Manager | A lightweight Rust implementation of the Bitwarden server API. Stores credentials locally, fully encrypted. Accessed via vault.spaceadler.local (Requires strict HTTPS via Cloudflare or Tailscale certs for client compatibility). |
-
-<details>
-  <summary>📁 Click to view: Data & File Management</summary>
-
-  ### File_Browser
-  ![File_Browser](docs/screenshots/File_Browser.png)
-
-  ### syncthing
-  ![syncthing](docs/screenshots/syncthing.png)
-
-  ### qB
-  ![qB](docs/screenshots/qB.png)
-</details>
 
 ## Technical Implementation & Storage Strategy
 
