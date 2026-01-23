@@ -111,7 +111,7 @@
 
 ## Architectural Overview & Philosophy
 
-The `sovereign-homelab` repository represents a radical departure from the prevailing model of digital consumption, which relies heavily on centralized, rent-seeking Cloud Service Providers (CSPs). In the current digital epoch, users typically lease access to their own data, like photos, documents, and sensetive financial/tax records, paying with privacy and monthly subscriptions.
+The `sovereign-homelab` repository represents a radical departure from the prevailing model of digital consumption, which relies heavily on centralized, rent-seeking Cloud Service Providers (CSPs). In the current digital epoch, users typically lease access to their own data, like photos, documents, and sensitive financial/tax records, paying with privacy and monthly subscriptions.
 The term "If you're not buying a product, then you're the product" no longer works as most if not all major tech companies happily bill you while training their AI on *your* data.
 This project inverts that dynamic, establishing a "First Principles" architecture where the user retains absolute authority over the data lifecycle, compute resources, and access control lists (ACLs).
 
