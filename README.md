@@ -133,18 +133,6 @@ The physical foundation of the sovereign lab is chosen for a specific balance of
 | **Power** | USB-C Supply | Ensuring stable voltage (5.1V/3A) to prevent SSD brownouts. |
 | **Network** | Gigabit Ethernet | Hardwired to the main router to ensure low latency and maximum throughput for streaming media (4K content) and large file transfers. |
 
-## The Stack: Gateway & Authentication
-
-This layer handles ingress, DNS resolution, and secure connectivity.
-
-| Service | Function | Configuration |
-| --- | --- | --- |
-| **Tailscale** | Mesh VPN | Enforces the perimeter. Configured with ACLs to strictly limit access to trusted devices only. |
-| **Nginx** | Reverse Proxy | Maps internal Docker ports to user-friendly subdomains. Handles SSL termination. |
-| **Pi-hole** | DNS & Ad Blocking | Authoritative DNS for `.local` domain. Blocks telemetry network-wide. |
-| **Ollama** | Local LLM Backend | Runs models like `llama3` locally. Exposes API on port 11434 for AI apps. |
-| **OpenWebUI** | Chat Interface | ChatGPT-like frontend interacting with local Ollama. Accessible via `chat.spaceadler.local`. |
-
 ### Initialization Protocol: From Silicon to Service
 
 Setting up the hardware requires specific firmware interventions to enable stable USB booting, a prerequisite for a "production-grade" RPi server.
@@ -180,6 +168,26 @@ The bouncers and traffic controllers.
 | **Ollama** | Local LLM Backend | Provides the intelligence layer for AI-enabled apps like Karakeep and Docmost. By running models like llama3 or mistral locally, queries remain private. The service exposes an API on port 11434 used by other containers. |
 | **OpenWebUI** | Chat Interface | A user-friendly, ChatGPT-like frontend interacting with the local Ollama instance. It provides a history of conversations and allows parameter tuning (temperature, context window) for the models. Accessible via chat.spaceadler.local. |
 
+<details>
+  <summary>Click to view: Core Infrastructure & Intelligence</summary>
+
+  ### Tailscale
+  ![Tailscale](docs/screenshots/Tailscale.png)
+
+  ### Nginx
+  ![Nginx](docs/screenshots/Nginx.png)
+
+  ### Pi-hole
+  ![Pi-hole](docs/screenshots/Pi-hole.png)
+
+  ### Ollama
+  ![Ollama](docs/screenshots/Ollama.png)
+
+  ### OpenWebUI
+  ![OpenWebUI](docs/screenshots/OpenWebUI.png)
+</details>
+
+
 ### 2. Observability & Maintenance
 
 System health and monitoring.
@@ -193,6 +201,20 @@ System health and monitoring.
 | **OpenSpeedTest** | LAN Testing | A lightweight HTML5 speed test server. Used to verify internal LAN throughput and WiFi bottlenecks between the client device and the Pi, independent of ISP performance. |
 | **Speedtest** | WAN Monitoring | Runs scheduled CLI speed tests against external Ookla servers to log WAN performance over time. This data is useful for verifying ISP SLAs and detecting throttling. |
 
+<details>
+  <summary>Click to view: Telemetry & Health</summary>
+
+  ### Beszel
+  ![Beszel](docs/screenshots/Beszel.png)
+
+  ### Uptimekuma
+  ![Uptimekuma](docs/screenshots/Uptimekuma.png)
+
+  ### Cup
+  ![Cup](docs/screenshots/Cup.png)
+</details>
+
+
 ### 3. Media & Streaming
 The "Entertainment Center." This cluster replaces Spotify, Netflix, iCloud/Google Photos, and Kindle, streaming content directly from the SSD to any device on the Tailscale mesh.
 
@@ -203,6 +225,23 @@ The "Entertainment Center." This cluster replaces Spotify, Netflix, iCloud/Googl
 | **Stremio** | Video Hub | The server component (stremio-server) acts as a bridge for the Stremio client. It manages addons and stream resolution logic, offloading these tasks from the client device. Accessed via watch.spaceadler.local. |
 | **Kavita** | E-book Server | Specialized for ePubs, CBZ, and PDFs. It provides a web-based reader with progress synchronization across devices, replacing Kindle/Comixology. Accessed via books.spaceadler.local. |
 | **Kiwix** | Offline Knowledge | Hosts ZIM files (e.g., the entirety of Wikipedia, iFixit, Project Gutenberg, Cooking wikis, Self-sustainability wikis, etc). This ensures access to the sum of human knowledge even during total internet outages. Accessed via wiki.spaceadler.local. |
+
+<details>
+  <summary>Click to view: Media & Content</summary>
+
+  ### Immich
+  ![Immich](docs/screenshots/Immich.png)
+
+  ### Navidrome
+  ![Navidrome](docs/screenshots/Navidrome.png)
+
+  ### Stremio
+  ![Stremio](docs/screenshots/Stremio.png)
+
+  ### Kavita
+  ![Kavita](docs/screenshots/Kavita.png)
+</details>
+
 
 ### Knowledge & Productivity
 
@@ -217,6 +256,22 @@ The "Second Brain." This cluster replaces Notion, Todoist, and Google Calendar, 
 | **Radicale** | CalDAV/CardDAV | A lightweight CalDAV/CardDAV server. It syncs calendars and contact lists across mobile and desktop devices, removing the need for Google/iCloud sync services. Accessed via calendar.spaceadler.local. |
 | **Glance** | Startpage | A highly customizable dashboard that aggregates RSS feeds, calendar events from Radicale, and service status from Uptime Kuma into a single "Glance" view. Accessed via home.spaceadler.local. |
 
+<details>
+  <summary>Click to view: Knowledge & Productivity</summary>
+
+  ### Docmost
+  ![Docmost](docs/screenshots/Docmost.png)
+
+  ### Memos
+  ![Memos](docs/screenshots/Memos.png)
+
+  ### Vikunja
+  ![Vikunja](docs/screenshots/Vikunja.png)
+
+  ### Glance
+  ![Glance](docs/screenshots/Glance.png)
+</details>
+
 ### Finance & Analytics
 
 The "CFO" of the homelab.
@@ -225,6 +280,16 @@ The "CFO" of the homelab.
 | --- | --- | --- |
 | **Ghostfolio** | Wealth Management | Tracks net worth across multiple asset classes (stocks, crypto, ETFs). It is privacy-first, allowing for manual entry or anonymous import without linking bank credentials directly. Accessed via assets.spaceadler.local. |
 | **Maybe** | Personal Finance | A budgeting and expense tracker. Note: As the official repository has been archived, this setup utilizes a specific, stable Docker SHA or a community-maintained fork to ensure continued functionality and security. Accessed via budget.spaceadler.local. |
+
+<details>
+  <summary>📈 Click to view: Sovereign Finance</summary>
+
+  ### Ghostfolio
+  ![Ghostfolio](docs/screenshots/Ghostfolio.png)
+
+  ### Maybe
+  ![Maybe](docs/screenshots/Maybe.png)
+</details>
 
 ### Storage & Synchronization
 
@@ -237,6 +302,19 @@ The "Logistics" layer. This cluster handles file movement, downloading, and data
 | **qBittorrent** | P2P Client | Manages peer-to-peer downloads. It is integrated with the VPN to ensure privacy during retrieval of Linux ISOs and other media. Accessed via qb.spaceadler.local. |
 | **jDownloader** | DDL Client | A headless container specialized for Direct Download Link (DDL) sites, YouTube rips, and other non-torrent content. Managed via the MyJDownloader web interface. Accessed via download.spaceadler.local. |
 | **Vaultwarden** | Password Manager | A lightweight Rust implementation of the Bitwarden server API. Stores credentials locally, fully encrypted. Accessed via vault.spaceadler.local (Requires strict HTTPS via Cloudflare or Tailscale certs for client compatibility). |
+
+<details>
+  <summary>📁 Click to view: Data & File Management</summary>
+
+  ### File_Browser
+  ![File_Browser](docs/screenshots/File_Browser.png)
+
+  ### syncthing
+  ![syncthing](docs/screenshots/syncthing.png)
+
+  ### qB
+  ![qB](docs/screenshots/qB.png)
+</details>
 
 ## Technical Implementation & Storage Strategy
 
