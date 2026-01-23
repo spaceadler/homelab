@@ -180,9 +180,6 @@ The bouncers and traffic controllers.
   ### Pi-hole
   ![Pi-hole](docs/screenshots/Pi-hole.png)
 
-  ### Ollama
-  ![Ollama](docs/screenshots/Ollama.png)
-
   ### OpenWebUI
   ![OpenWebUI](docs/screenshots/OpenWebUI.png)
 </details>
