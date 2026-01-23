@@ -454,4 +454,4 @@ This architecture is inherently modular. While currently hosted on a Raspberry P
 
 ---
 
-*powered by logic, coffee, and sleepless nights*
+*powered by logic, coffee, and many sleepless nights*
