@@ -202,7 +202,7 @@ System health and monitoring.
 | **Speedtest** | WAN Monitoring | Runs scheduled CLI speed tests against external Ookla servers to log WAN performance over time. This data is useful for verifying ISP SLAs and detecting throttling. |
 
 <details>
-  <summary>Click to view: Telemetry & Health</summary>
+  <summary>📊 Click to view: Telemetry & Health</summary>
 
   ### Beszel
   ![Beszel](docs/screenshots/Beszel.png)
@@ -227,7 +227,7 @@ The "Entertainment Center." This cluster replaces Spotify, Netflix, iCloud/Googl
 | **Kiwix** | Offline Knowledge | Hosts ZIM files (e.g., the entirety of Wikipedia, iFixit, Project Gutenberg, Cooking wikis, Self-sustainability wikis, etc). This ensures access to the sum of human knowledge even during total internet outages. Accessed via wiki.spaceadler.local. |
 
 <details>
-  <summary>Click to view: Media & Content</summary>
+  <summary>🎬 Click to view: Media & Content</summary>
 
   ### Immich
   ![Immich](docs/screenshots/Immich.png)
@@ -257,7 +257,7 @@ The "Second Brain." This cluster replaces Notion, Todoist, and Google Calendar, 
 | **Glance** | Startpage | A highly customizable dashboard that aggregates RSS feeds, calendar events from Radicale, and service status from Uptime Kuma into a single "Glance" view. Accessed via home.spaceadler.local. |
 
 <details>
-  <summary>Click to view: Knowledge & Productivity</summary>
+  <summary>🧠 Click to view: Knowledge & Productivity</summary>
 
   ### Docmost
   ![Docmost](docs/screenshots/Docmost.png)
