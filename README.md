@@ -169,7 +169,7 @@ The bouncers and traffic controllers.
 | **OpenWebUI** | Chat Interface | A user-friendly, ChatGPT-like frontend interacting with the local Ollama instance. It provides a history of conversations and allows parameter tuning (temperature, context window) for the models. Accessible via chat.spaceadler.local. |
 
 <details>
-  <summary>Click to view: Core Infrastructure & Intelligence</summary>
+  <summary>🏛️ Click to view: Core Infrastructure & Intelligence</summary>
 
   ### Tailscale
   ![Tailscale](docs/screenshots/Tailscale.png)
