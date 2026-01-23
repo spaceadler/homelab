@@ -13,12 +13,12 @@
 2. [Architectural Overview & Philosophy](#architectural-overview--philosophy)
 3. [Network Topology & Security Model](#network-topology--security-model)
 4. [Hardware Infrastructure](#hardware-infrastructure--provisioning)
-5. [The Stack: Gateway & Authentication](#the-stack-gateway--authentication)
-6. [The Stack: Observability & Maintenance](#the-stack-observability--maintenance)
-7. [The Stack: Media & Streaming](#the-stack-media--streaming)
-8. [The Stack: Knowledge & Productivity](#the-stack-knowledge--productivity)
-9. [The Stack: Finance & Analytics](#the-stack-finance--analytics)
-10. [The Stack: Storage & Synchronization](#the-stack-storage--synchronization)
+5. [Gateway & Authentication](#gateway--authentication)
+6. [Observability & Maintenance](#observability--maintenance)
+7. [Media & Streaming](#media--streaming)
+8. [Knowledge & Productivity](#knowledge--productivity)
+9. [Finance & Analytics](#finance--analytics)
+10. [Storage & Synchronization](#storage--synchronization)
 11. [Technical Implementation & Storage Strategy](#technical-implementation--storage-strategy)
 12. [Deployment Strategy (IaC)](#deployment-strategy-infrastructure-as-code)
 13. [Backup & Disaster Recovery](#backup-redundancy--disaster-recovery)
@@ -26,16 +26,48 @@
 ## Infrastructure & Services Overview
 
 <details>
-  <summary>📁 Click to view: Data & File Management</summary>
+  <summary>🏛️ Click to view: Core Infrastructure & Intelligence</summary>
 
-  ### File_Browser
-  ![File_Browser](docs/screenshots/File_Browser.png)
+  ### Tailscale
+  ![Tailscale](docs/screenshots/Tailscale.png)
 
-  ### syncthing
-  ![syncthing](docs/screenshots/syncthing.png)
+  ### Nginx
+  ![Nginx](docs/screenshots/Nginx.png)
 
-  ### qB
-  ![qB](docs/screenshots/qB.png)
+  ### Pi-hole
+  ![Pi-hole](docs/screenshots/Pi-hole.png)
+
+  ### OpenWebUI
+  ![OpenWebUI](docs/screenshots/OpenWebUI.png)
+</details>
+
+<details>
+  <summary>📊 Click to view: Telemetry & Health</summary>
+
+  ### Beszel
+  ![Beszel](docs/screenshots/Beszel.png)
+
+  ### Uptimekuma
+  ![Uptimekuma](docs/screenshots/Uptimekuma.png)
+
+  ### Cup
+  ![Cup](docs/screenshots/Cup.png)
+</details>
+
+<details>
+  <summary>🎬 Click to view: Media & Content</summary>
+
+  ### Immich
+  ![Immich](docs/screenshots/Immich.png)
+
+  ### Navidrome
+  ![Navidrome](docs/screenshots/Navidrome.png)
+
+  ### Stremio
+  ![Stremio](docs/screenshots/Stremio.png)
+
+  ### Kavita
+  ![Kavita](docs/screenshots/Kavita.png)
 </details>
 
 <details>
@@ -55,32 +87,26 @@
 </details>
 
 <details>
-  <summary>📊 Click to view: Telemetry & Health</summary>
+  <summary>📈 Click to view: Sovereign Finance</summary>
 
-  ### Beszel
-  ![Beszel](docs/screenshots/Beszel.png)
+  ### Ghostfolio
+  ![Ghostfolio](docs/screenshots/Ghostfolio.png)
 
-  ### Uptimekuma
-  ![Uptimekuma](docs/screenshots/Uptimekuma.png)
-
-  ### Cup
-  ![Cup](docs/screenshots/Cup.png)
+  ### Maybe
+  ![Maybe](docs/screenshots/Maybe.png)
 </details>
 
 <details>
-  <summary>🏛️ Click to view: Core Infrastructure & Intelligence</summary>
+  <summary>📁 Click to view: Data & File Management</summary>
 
-  ### Tailscale
-  ![Tailscale](docs/screenshots/Tailscale.png)
+  ### File_Browser
+  ![File_Browser](docs/screenshots/File_Browser.png)
 
-  ### Nginx
-  ![Nginx](docs/screenshots/Nginx.png)
+  ### syncthing
+  ![syncthing](docs/screenshots/syncthing.png)
 
-  ### Pi-hole
-  ![Pi-hole](docs/screenshots/Pi-hole.png)
-
-  ### OpenWebUI
-  ![OpenWebUI](docs/screenshots/OpenWebUI.png)
+  ### qB
+  ![qB](docs/screenshots/qB.png)
 </details>
 
 ## Architectural Overview & Philosophy
@@ -213,11 +239,11 @@ Setting up the hardware requires specific firmware interventions to enable stabl
 * Command: tailscale up --auth-key=tskey-auth-xxxx authenticates the node headlessly.
 * Lockdown: Once Tailscale is active, ufw (Uncomplicated Firewall) is configured to deny all incoming traffic on Tailscale traffic, this ensures the device is invisible outside the network.
 
-## The Stack: Observability & Maintenance
+## The Stack
 
 "You cannot manage what you cannot measure."
 
-### 1. Gateway & Authentication
+### Gateway & Authentication
 
 The bouncers and traffic controllers.
 
@@ -230,7 +256,7 @@ The bouncers and traffic controllers.
 | **OpenWebUI** | Chat Interface | A user-friendly, ChatGPT-like frontend interacting with the local Ollama instance. It provides a history of conversations and allows parameter tuning (temperature, context window) for the models. Accessible via chat.spaceadler.local. |
 
 
-### 2. Observability & Maintenance
+### Observability & Maintenance
 
 System health and monitoring.
 
@@ -243,7 +269,7 @@ System health and monitoring.
 | **OpenSpeedTest** | LAN Testing | A lightweight HTML5 speed test server. Used to verify internal LAN throughput and WiFi bottlenecks between the client device and the Pi, independent of ISP performance. |
 | **Speedtest** | WAN Monitoring | Runs scheduled CLI speed tests against external Ookla servers to log WAN performance over time. This data is useful for verifying ISP SLAs and detecting throttling. |
 
-### 3. Media & Streaming
+### Media & Streaming
 The "Entertainment Center." This cluster replaces Spotify, Netflix, iCloud/Google Photos, and Kindle, streaming content directly from the SSD to any device on the Tailscale mesh.
 
 | Service | Function | Configuration |
@@ -253,23 +279,6 @@ The "Entertainment Center." This cluster replaces Spotify, Netflix, iCloud/Googl
 | **Stremio** | Video Hub | The server component (stremio-server) acts as a bridge for the Stremio client. It manages addons and stream resolution logic, offloading these tasks from the client device. Accessed via watch.spaceadler.local. |
 | **Kavita** | E-book Server | Specialized for ePubs, CBZ, and PDFs. It provides a web-based reader with progress synchronization across devices, replacing Kindle/Comixology. Accessed via books.spaceadler.local. |
 | **Kiwix** | Offline Knowledge | Hosts ZIM files (e.g., the entirety of Wikipedia, iFixit, Project Gutenberg, Cooking wikis, Self-sustainability wikis, etc). This ensures access to the sum of human knowledge even during total internet outages. Accessed via wiki.spaceadler.local. |
-
-<details>
-  <summary>🎬 Click to view: Media & Content</summary>
-
-  ### Immich
-  ![Immich](docs/screenshots/Immich.png)
-
-  ### Navidrome
-  ![Navidrome](docs/screenshots/Navidrome.png)
-
-  ### Stremio
-  ![Stremio](docs/screenshots/Stremio.png)
-
-  ### Kavita
-  ![Kavita](docs/screenshots/Kavita.png)
-</details>
-
 
 ### Knowledge & Productivity
 
@@ -292,16 +301,6 @@ The "CFO" of the homelab.
 | --- | --- | --- |
 | **Ghostfolio** | Wealth Management | Tracks net worth across multiple asset classes (stocks, crypto, ETFs). It is privacy-first, allowing for manual entry or anonymous import without linking bank credentials directly. Accessed via assets.spaceadler.local. |
 | **Maybe** | Personal Finance | A budgeting and expense tracker. Note: As the official repository has been archived, this setup utilizes a specific, stable Docker SHA or a community-maintained fork to ensure continued functionality and security. Accessed via budget.spaceadler.local. |
-
-<details>
-  <summary>📈 Click to view: Sovereign Finance</summary>
-
-  ### Ghostfolio
-  ![Ghostfolio](docs/screenshots/Ghostfolio.png)
-
-  ### Maybe
-  ![Maybe](docs/screenshots/Maybe.png)
-</details>
 
 ### Storage & Synchronization
 
