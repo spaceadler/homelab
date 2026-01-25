@@ -51,7 +51,9 @@ This broke the **Nyquist Limit** (which is half the sample rate, or 22,050 Hz). 
 ## **4. The proof (hex dump)**
 
 After fixing the math, I ran xxd to look at the raw bytes of the file I made. It worked perfectly:  
+
 `00000000: 5249 4646 xxxx xxxx 5741 5645 666d 7420 RIFF....WAVEfmt`
+
 `00000010: 1000 0000 0100 0200 44ac 0000 10b1 0200 ........D.......`
 
 * `52 49 46 46` \= "RIFF"
