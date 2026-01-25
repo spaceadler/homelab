@@ -26,7 +26,7 @@ That's it. That's the whole engine.
 ## **2. The header & why structs are the best**
 
 A WAV file needs a specific 44-byte header at the start. If you mess up a single byte, the file is corrupted.  
-I could have written the bytes one by one, but that's messy. Instead, I used a C **struct**. A struct is like a stencil—I define the shape of the data I want, fill it with values, and then stamp the whole thing onto the disk in one go.
+I could have written the bytes one by one, but that's messy. Instead, I used a C **struct**. So I define the shape of the data I want, fill it with values, and then stamp the whole thing onto the disk in one go.
 
 ### **The "Packing" Trick**
 
@@ -42,7 +42,7 @@ It wasn't smooth sailing. Here is how I almost broke my ears.
 I tried to make a "chirp" sound (frequency goes up over time).  
 **The Mistake:** I added \+1 to the frequency *every single sample*.  
 **The Result:** Since there are 44,100 samples per second, the frequency shot up to 44kHz in one second.  
-This broke the **Nyquist Limit** (which is half the sample rate, or 22,050 Hz). When you go past that limit, the audio doesn't disappear—it "folds" back down as a lower frequency alias. The sound went up, bounced off the ceiling, and came back down as a terrifying, chaotic screeching noise. It sounded like a demon.
+This broke the **Nyquist Limit** (which is half the sample rate, or 22,050 Hz). When you go past that limit, the audio doesn't disappear, rather it "folds" back down as a lower frequency alias. The sound went up, bounced off the ceiling, and came back down as a terrifying, chaotic screeching noise. It sounded like a demon.
 
 ### **The Math Typo**
 
