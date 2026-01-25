@@ -17,8 +17,8 @@ $$t \= \\frac{i}{44100}$$
 So the code is basically just:
 
 ```c
-double t \= (double)i / SAMPLE\_RATE;  
-sample \= sin(2.0 \* PI \* 440.0 \* t);
+double t = (double)i / SAMPLE_RATE;  
+sample = sin(2.0 * PI * 440.0 * t);
 ```
 
 That's it. That's the whole engine.
