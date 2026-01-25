@@ -1,7 +1,7 @@
 # Embedded WAV
 
 I wanted to understand how binary files actually work. Usually, we just import a library and hit play(). But I wanted to know what bytes actually go onto the disk to make a speaker move.  
-This project, wav.c, does four things in one go:
+This project, wave.c, does four things in one go:
 
 1. **Builds a Header:** Manually constructs the 44-byte ID card that tells the computer "Hey, I'm a WAV file."  
 2. **Does Physics:** Simulates a 440Hz sine wave using math.  
@@ -64,7 +64,7 @@ If you are on Linux or WSL, here is how you build it.
 **The Command:**
 
 ```bash
-gcc -o wavgen wav.c -lm
+gcc -o wavgen wave.c -lm
 ```
 
 **Important:** You **must** add -lm at the end. This links the math library (libm). If you forget it, GCC will yell at you about "undefined reference to sin".  
