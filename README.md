@@ -30,8 +30,8 @@ I could have written the bytes one by one, but that's messy. Instead, I used a C
 
 ### **The "Packing" Trick**
 
-There is a catch. C compilers like to add empty "padding" bytes between variables to make memory access faster. If I let the compiler do that, my 44-byte header becomes 48 bytes, and the file breaks.1  
-I had to use a special command: \#pragma pack(1). This tells the compiler: "Do not add padding. Squeeze these bytes together tightly." This ensures the binary output matches the Microsoft WAV specification perfectly.3
+There is a catch. C compilers like to add empty "padding" bytes between variables to make memory access faster. If I let the compiler do that, my 44-byte header becomes 48 bytes, and the file breaks.
+I had to use a special command: \#pragma pack(1). This tells the compiler: "Do not add padding. Squeeze these bytes together tightly." This ensures the binary output matches the Microsoft WAV specification perfectly.
 
 ## **3. My hilarious screw-ups**
 
@@ -46,7 +46,7 @@ This broke the **Nyquist Limit** (which is half the sample rate, or 22,050 Hz). 
 
 ### **The Math Typo**
 
-**The Mistake:** I typed sin(20 \* PI...) instead of sin(2.0 \* PI...). **The Result:** I multiplied the pitch by 10\. instead of a nice 440Hz tone, I blasted a 4400Hz shriek at full volume. Always check your decimals.5
+**The Mistake:** I typed sin(20 \* PI...) instead of sin(2.0 \* PI...). **The Result:** I multiplied the pitch by 10\. instead of a nice 440Hz tone, I blasted a 4400Hz shriek at full volume. Always check your decimals.
 
 ## **4. The proof (hex dump)**
 
