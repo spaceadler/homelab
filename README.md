@@ -10,7 +10,7 @@ This project, wav.c, does four things in one go:
 
 ## **1. The math (it's actually simple)**
 
-To make a sound, you need a sine wave. The formula is y = \sin(2\pi f t).
+To make a sound, you need a sine wave. The formula is $$y = \sin(2\pi f t)$$.
 But computers don't know what "time" ($t$) is; they only know "samples" (indexes in an array). So we have to convert our loop counter $i$ into time using the sample rate (44,100 Hz):
 
 t = \frac{i}{44100}  
