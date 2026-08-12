@@ -105,6 +105,11 @@
   ![qB](screenshots/qB.png)
 </details>
 
+<br>
+
+<details>
+  <summary>Click to view: Architectural Overview & Philosophy</summary>
+
 ## Architectural Overview & Philosophy
 
 The `homelab` repository represents a radical departure from the prevailing model of digital consumption, which relies heavily on centralized, rent-seeking Cloud Service Providers (CSPs). In the current digital epoch, users typically lease access to their own data, like photos, documents, and sensitive financial/tax records, paying with privacy and monthly subscriptions.
@@ -123,6 +128,8 @@ Traditional homelab architectures often rely on perimeter security models, expos
 
 ### Infrastructure as Code (IaC)
 The operational state of the system is defined declaratively. The `docker-compose.yml` files act as the single source of truth for the entire deployment. Rebuilding the server is not a manual process of installing binaries and editing config files, but an automated orchestration of container deployment. This ensures reproducibility, version control, and rapid disaster recovery, aligning it with modern DevOps best practices.
+
+</details>
 
 ## Network Topology & Security Model
 
@@ -196,13 +203,21 @@ graph TD
     class Host host;
 ```
 
-### Traffic Flow Analysis & Packet Lifecycle
+<details>
+  <summary>Click to view: Traffic Flow Analysis & Packet Lifecycle</summary>
+
+## Traffic Flow Analysis & Packet Lifecycle
 
 1. **Resolution:** The client device requests a service URL, such as docmost.spaceadler.local. If the device is connected to the Tailscale network, the DNS request is intercepted by the split-DNS configuration. The device is must be configured to use the Pi-hole container as its DNS resolver.
 2. **Routing:** Pi-hole receives the query and matches it against its local DNS records (configured via dnsmasq.d or the UI). It returns the Tailscale IP address (e.g., 100.x.y.z) of the Raspberry Pi. Crucially, this IP is non-routable on the public internet.
 3. **Transport:** The client initiates a connection to that IP. Tailscale encrypts the packet using the WireGuard protocol and punches a hole through the NAT (Network Address Translation) layers to reach the Raspberry Pi directly. This is peer-to-peer (P2P) communication facilitated by DERP (Designated Encrypted Relay for Packets) servers only when a direct connection cannot be established.
 4. **Ingress:** The encrypted packet arrives at the Pi's virtual network interface. The OS decrypts it and routes it to Nginx.
 5. **Proxying:** Nginx inspects the HTTP Host header (e.g., docmost.spaceadler.local). Based on the server block configuration, it proxies the request to the specific internal Docker container IP/hostname and port (e.g., hostname:3000).
+
+</details>
+
+<details>
+  <summary>Click to view: Hardware Infrastructure & Provisioning</summary>
 
 ## Hardware Infrastructure & Provisioning
 
@@ -216,7 +231,12 @@ The physical foundation of the sovereign lab is chosen for a specific balance of
 | **Power** | USB-C Supply | Ensuring stable voltage (5.1V/3A) to prevent SSD brownouts. |
 | **Network** | Gigabit Ethernet | Hardwired to the main router to ensure low latency and maximum throughput for streaming media (4K content) and large file transfers. |
 
-### Initialization Protocol: From Silicon to Service
+</details>
+
+<details>
+  <summary>Click to view: Initialization Protocol: From Silicon to Service</summary>
+
+## Initialization Protocol: From Silicon to Service
 
 Setting up the hardware requires specific firmware interventions to enable stable USB booting, a prerequisite for a "production-grade" RPi server.
 
@@ -234,6 +254,8 @@ Setting up the hardware requires specific firmware interventions to enable stabl
 * Before Docker is even installed, Tailscale is deployed to secure the node.
 * Command: tailscale up --auth-key=tskey-auth-xxxx authenticates the node headlessly.
 * Lockdown: Once Tailscale is active, ufw (Uncomplicated Firewall) is configured to deny all incoming traffic on Tailscale traffic, this ensures the device is invisible outside the network.
+
+</details>
 
 ## The Stack
 
@@ -452,6 +474,9 @@ The deployment utilizes Docker Compose for modularity. While a monolithic `docke
 
 Below is a Docmost `docker-compose.yml` example.
 
+<details>
+  <summary>Click to view: Docmost docker-compose.yml</summary>
+
 ```yaml
 services:
   docmost:
@@ -500,6 +525,7 @@ volumes:
   db_data:                             # Storage for the SQL database
   redis_data:                          # Storage for Redis dump.rdb
 ```
+</details>
 
 ## Backup, Redundancy, & Disaster Recovery
 
