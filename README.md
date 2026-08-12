@@ -8,6 +8,8 @@
 ![OS](https://img.shields.io/badge/OS-Debian-red)
 ![Architecture](https://img.shields.io/badge/Architecture-ARM64-orange)
 
+> Are you new to self hosting? **[Click here](abstract.md)** for a TL;DR!
+
 ## Table of Contents
 1. [Infrastructure & Services Overview](#infrastructure--services-overview)
 2. [Architectural Overview & Philosophy](#architectural-overview--philosophy)
