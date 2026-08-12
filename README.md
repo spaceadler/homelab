@@ -1,6 +1,6 @@
 # A Sovereign Homelab Architecture
 
-> Engineering a comprehensive, self-sovereign digital infrastructure architected on first principles, reclaiming data ownership through physically isolated hardware, encrypted mesh networking, and auditable Infrastructure as Code (IaC), thereby eliminating reliance on rent-seeking centralized SaaS providers.
+> Engineering a comprehensive, self-sovereign digital infrastructure architected on first principles, reclaiming data ownership through physically isolated hardware, encrypted mesh networking, and auditable Infrastructure as Code (IaC), thereby eliminating reliance on rent-seeking centralized cloud providers.
 
 ![Status](https://img.shields.io/badge/Status-Active-success)
 ![Containerization](https://img.shields.io/badge/Containerization-Docker-blue)
@@ -17,11 +17,13 @@
 6. [Observability & Maintenance](#observability--maintenance)
 7. [Media & Streaming](#media--streaming)
 8. [Knowledge & Productivity](#knowledge--productivity)
-9. [Finance & Analytics](#finance--analytics)
-10. [Storage & Synchronization](#storage--synchronization)
-11. [Technical Implementation & Storage Strategy](#technical-implementation--storage-strategy)
-12. [Deployment Strategy (IaC)](#deployment-strategy-infrastructure-as-code)
-13. [Backup & Disaster Recovery](#backup-redundancy--disaster-recovery)
+9. [Social Networking](#social-networking)
+10. [Finance & Analytics](#finance--analytics)
+11. [Tracking & Logistics](#tracking--logistics)
+12. [Storage & Synchronization](#storage--synchronization)
+13. [Technical Implementation & Storage Strategy](#technical-implementation--storage-strategy)
+14. [Deployment Strategy (IaC)](#deployment-strategy-infrastructure-as-code)
+15. [Backup & Disaster Recovery](#backup-redundancy--disaster-recovery)
 
 ## Infrastructure & Services Overview
 
@@ -29,84 +31,76 @@
   <summary>🏛️ Click to view: Core Infrastructure & Intelligence</summary>
 
   ### Tailscale
-  ![Tailscale](docs/screenshots/Tailscale.png)
+  ![Tailscale](screenshots/Tailscale.png)
 
   ### Nginx
-  ![Nginx](docs/screenshots/Nginx.png)
+  ![Nginx](screenshots/Nginx.png)
 
   ### Pi-hole
-  ![Pi-hole](docs/screenshots/Pi-hole.png)
+  ![Pi-hole](screenshots/Pi-hole.png)
 
-  ### OpenWebUI
-  ![OpenWebUI](docs/screenshots/OpenWebUI.png)
 </details>
 
 <details>
   <summary>📊 Click to view: Telemetry & Health</summary>
 
   ### Beszel
-  ![Beszel](docs/screenshots/Beszel.png)
-
-  ### Uptimekuma
-  ![Uptimekuma](docs/screenshots/Uptimekuma.png)
+  ![Beszel](screenshots/Beszel.png)
 
   ### Cup
-  ![Cup](docs/screenshots/Cup.png)
+  ![Cup](screenshots/Cup.png)
 </details>
 
 <details>
   <summary>🎬 Click to view: Media & Content</summary>
 
   ### Immich
-  ![Immich](docs/screenshots/Immich.png)
+  ![Immich](screenshots/Immich.png)
 
   ### Navidrome
-  ![Navidrome](docs/screenshots/Navidrome.png)
+  ![Navidrome](screenshots/Navidrome.png)
 
   ### Stremio
-  ![Stremio](docs/screenshots/Stremio.png)
+  ![Stremio](screenshots/Stremio.png)
 
   ### Kavita
-  ![Kavita](docs/screenshots/Kavita.png)
+  ![Kavita](screenshots/Kavita.png)
 </details>
 
 <details>
   <summary>🧠 Click to view: Knowledge & Productivity</summary>
 
-  ### Docmost
-  ![Docmost](docs/screenshots/Docmost.png)
-
   ### Memos
-  ![Memos](docs/screenshots/Memos.png)
+  ![Memos](screenshots/Memos.png)
 
   ### Vikunja
-  ![Vikunja](docs/screenshots/Vikunja.png)
+  ![Vikunja](screenshots/Vikunja.png)
 
   ### Glance
-  ![Glance](docs/screenshots/Glance.png)
+  ![Glance](screenshots/Glance.png)
 </details>
 
 <details>
   <summary>📈 Click to view: Sovereign Finance</summary>
 
   ### Ghostfolio
-  ![Ghostfolio](docs/screenshots/Ghostfolio.png)
+  ![Ghostfolio](screenshots/Ghostfolio.png)
 
   ### Maybe
-  ![Maybe](docs/screenshots/Maybe.png)
+  ![Maybe](screenshots/Maybe.png)
 </details>
 
 <details>
   <summary>📁 Click to view: Data & File Management</summary>
 
   ### File_Browser
-  ![File_Browser](docs/screenshots/File_Browser.png)
+  ![File_Browser](screenshots/File_Browser.png)
 
   ### syncthing
-  ![syncthing](docs/screenshots/syncthing.png)
+  ![syncthing](screenshots/syncthing.png)
 
   ### qB
-  ![qB](docs/screenshots/qB.png)
+  ![qB](screenshots/qB.png)
 </details>
 
 ## Architectural Overview & Philosophy
@@ -121,7 +115,7 @@ The primary driver for this architecture is Digital Sovereignty. Commercial clou
 ### Security via Isolation (The Zero Trust Model)
 Traditional homelab architectures often rely on perimeter security models, exposing ports (80/443) to the public internet, secured only by a reverse proxy and tools like Fail2Ban. This project rejects that model in favor of Zero Trust Networking.
 
-1.  **No Public Ingress:** The edge router forwards no ports. The public IP address of the home network serves strictly as an egress point.
+1.  **No Public Ingress:** The edge router forwards no ports. Even the public IP is completely closed off after Tailscale is set up, serving strictly as an egress point.
 2.  **Mesh VPN:** The architecture leverages a Hub-and-Spoke VPN model powered by Tailscale. This creates a virtual overlay network where devices must cryptographically authenticate via a coordination server before they can even perceive the existence of the host node. This reduces the attack surface from "the entire internet" to "authenticated nodes only".
 3.  **Internal Routing:** Services are addressed via a local DNS zone (`spaceadler.local`), resolving only within the context of the encrypted mesh. This renders the infrastructure invisible to external port scanners, Shodan indexing, and automated botnets.
 
@@ -249,12 +243,10 @@ The bouncers and traffic controllers.
 
 | Service | Function | Configuration |
 | --- | --- | --- |
-| **Tailscale** | Mesh VPN | Enforces the perimeter. Configured with Access Control Lists (ACLs) to strictly limit which devices can access the server. It bridges the gap between the remote client and the local services.
-| **Nginx** | Reverse Proxy | Maps internal Docker ports (e.g., 3000, 8080) to user-friendly subdomains (docmost.spaceadler.local). Handles SSL termination, allowing encrypted HTTPS connections even for local traffic. The configuration uses proxy_pass directives to route traffic based on the incoming Host header. |
-| **Pi-hole** | DNS & Ad Blocking | Serves as the authoritative DNS server for the .local domain. It is configured with Local DNS Records (CNAME/A) to rewrite *.spaceadler.local to the internal Tailscale IP of the host. Additionally, it blocks tracking telemetry and ads at the network level for all devices connected to the VPN. |
-| **Ollama** | Local LLM Backend | Provides the intelligence layer for AI-enabled apps like Karakeep and Docmost. By running models like llama3 or mistral locally, queries remain private. The service exposes an API on port 11434 used by other containers. |
-| **OpenWebUI** | Chat Interface | A user-friendly, ChatGPT-like frontend interacting with the local Ollama instance. It provides a history of conversations and allows parameter tuning (temperature, context window) for the models. Accessible via chat.spaceadler.local. |
-
+| **Tailscale** | Mesh VPN | Enforces the perimeter. It acts as the virtual network layer between the normal internet and this self-hosted ecosystem, using normal Tailscale users as the gatekeeper to the network. |
+| **Nginx** | Reverse Proxy | Maps internal Docker ports (e.g., 3000, 8080) to user-friendly subdomains (docmost.spaceadler.local). Handles SSL termination, allowing encrypted HTTPS connections even for local traffic. |
+| **Pi-hole** | DNS & Ad Blocking | Serves as the authoritative DNS server for the .local domain. It is configured with Local DNS Records (CNAME/A) to rewrite *.spaceadler.local to the internal Tailscale IP of the host. |
+| **Searxng** | Metasearch Engine | A privacy-respecting, hackable metasearch engine that aggregates results from more than 70 search services while preventing user tracking and profiling. |
 
 ### Observability & Maintenance
 
@@ -262,36 +254,49 @@ System health and monitoring.
 
 | Service | Function | Configuration |
 | --- | --- | --- |
-| **Beszel** | Monitoring | A specialized hub-and-agent monitor designed for low-resource environments. The Agent runs on the host to scrape Docker stats, disk I/O, and CPU temperatures. The Hub (web UI) visualizes historical data, critical for diagnosing thermal throttling on the Pi. Accessible via stats.spaceadler.local. |
-| **Uptime Kuma** | Status Page & Alerting | Pings all internal services (HTTP/TCP) every 60 seconds. If a container like Nginx or Immich goes down, it triggers alerts (via Ntfy or Telegram). It provides a sleek status dashboard at uptime.spaceadler.local. |
-| **Cup** | Image Updater | Scans Docker Hub and GHCR for new image digests. Unlike Watchtower which auto-updates (risking breakage), Cup provides a dashboard to review changelogs before applying updates. It ensures the stack remains secure but stable. |
-| **Portainer** | Orchestration | Provides a GUI for managing Docker stacks, viewing container logs, and executing shell commands inside containers. It is the primary tool for day-to-day management and debugging of the docker-compose stacks. |
-| **OpenSpeedTest** | LAN Testing | A lightweight HTML5 speed test server. Used to verify internal LAN throughput and WiFi bottlenecks between the client device and the Pi, independent of ISP performance. |
-| **Speedtest** | WAN Monitoring | Runs scheduled CLI speed tests against external Ookla servers to log WAN performance over time. This data is useful for verifying ISP SLAs and detecting throttling. |
+| **Beszel** | Monitoring | A specialized hub-and-agent monitor designed for low-resource environments. The Hub visualizes historical data, critical for diagnosing thermal throttling on the Pi. |
+| **Cup** | Image Updater | Scans Docker Hub and GHCR for new image digests. Provides a dashboard to review changelogs before applying updates. It ensures the stack remains secure but stable. |
+| **OpenSpeedTest** | LAN Testing | A lightweight HTML5 speed test server. Used to verify internal LAN throughput and WiFi bottlenecks. |
+| **Speedtest** | WAN Monitoring | Runs scheduled CLI speed tests against external Ookla servers to log WAN performance over time. |
 
 ### Media & Streaming
-The "Entertainment Center." This cluster replaces Spotify, Netflix, iCloud/Google Photos, and Kindle, streaming content directly from the SSD to any device on the Tailscale mesh.
+
+The "Entertainment Center." This cluster replaces Spotify, Netflix, iCloud/Google Photos, and Kindle.
 
 | Service | Function | Configuration |
 | --- | --- | --- |
-| **Immich** | Photos | A comprehensive solution using machine learning (CLIP, facial recognition) to organize photos. It supports background backup from mobile devices. Given the RPi's constraints, heavy ML jobs are scheduled for off-peak hours. Accessed via gallery.spaceadler.local. |
-| **Navidrome** | Music Streamer | A highly efficient Go binary that implements the Subsonic API. It allows clients like Symfonium (Android) or DSub to stream FLAC and MP3 libraries. It supports on-the-fly transcoding to Opus for bandwidth efficiency over mobile networks. Accessed via music.spaceadler.local. |
-| **Stremio** | Video Hub | The server component (stremio-server) acts as a bridge for the Stremio client. It manages addons and stream resolution logic, offloading these tasks from the client device. Accessed via watch.spaceadler.local. |
-| **Kavita** | E-book Server | Specialized for ePubs, CBZ, and PDFs. It provides a web-based reader with progress synchronization across devices, replacing Kindle/Comixology. Accessed via books.spaceadler.local. |
-| **Kiwix** | Offline Knowledge | Hosts ZIM files (e.g., the entirety of Wikipedia, iFixit, Project Gutenberg, Cooking wikis, Self-sustainability wikis, etc). This ensures access to the sum of human knowledge even during total internet outages. Accessed via wiki.spaceadler.local. |
+| **Immich** | Photos | A comprehensive solution using machine learning (CLIP, facial recognition) to organize photos. Supports background backup from mobile devices. |
+| **Navidrome** | Music Streamer | A highly efficient Go binary that implements the Subsonic API for streaming FLAC and MP3 libraries. |
+| **Stremio** | Video Hub | The server component (stremio-server) acts as a bridge for the Stremio client, offloading resolution logic. |
+| **Kavita** | E-book Server | Specialized for ePubs, CBZ, and PDFs. It provides a web-based reader with progress synchronization across devices. |
+| **Kiwix** | Offline Knowledge | Hosts ZIM files (Wikipedia, iFixit) ensuring access to the sum of human knowledge even during outages. |
+| **Audiobookshelf** | Audiobooks | Self-hosted podcast and audiobook server with progress syncing across mobile clients. |
 
 ### Knowledge & Productivity
 
-The "Second Brain." This cluster replaces Notion, Todoist, and Google Calendar, ensuring that intellectual output is owned by the creator.
+The "Second Brain" and document management.
 
 | Service | Function | Configuration |
 | --- | --- | --- |
-| **Docmost** | Documentation |  A real-time collaborative wiki (Notion/Confluence alternative). It supports "Spaces" to segregate content (e.g., University notes vs. Personal projects) and integrates with diagrams and code blocks. Accessed via docs.spaceadler.local. |
-| **Memos** | Thought Stream | A privacy-first, Twitter-like micro-blogging tool for capturing fleeting thoughts and ideas. It supports Markdown and object storage, acting as a "capture buffer" before synthesizing ideas into Docmost. Accessed via memos.spaceadler.local. |
-| **Vikunja** | Task Management | A powerful to-do list application with Kanban boards, Gantt charts, and sub-tasks. It replaces Todoist, organized into namespaces (e.g., todo.spaceadler.local). It allows for complex project management workflows. |
-| **Karakeep** | Web Archiving | Formerly known as Hoarder. It bookmarks URLs, caches the content (preventing link rot), and uses the local AI (Ollama) to auto-tag and summarize resources. Accessed via bookmark.spaceadler.local. |
-| **Radicale** | CalDAV/CardDAV | A lightweight CalDAV/CardDAV server. It syncs calendars and contact lists across mobile and desktop devices, removing the need for Google/iCloud sync services. Accessed via calendar.spaceadler.local. |
-| **Glance** | Startpage | A highly customizable dashboard that aggregates RSS feeds, calendar events from Radicale, and service status from Uptime Kuma into a single "Glance" view. Accessed via home.spaceadler.local. |
+| **Vikunja** | Task Management | A powerful to-do list application with Kanban boards, Gantt charts, and sub-tasks. |
+| **Karakeep** | Web Archiving | Bookmarks URLs, caches the content (preventing link rot), and uses the local AI (Ollama) to auto-tag. |
+| **Radicale** | CalDAV/CardDAV | A lightweight server to sync calendars and contact lists across devices. |
+| **Glance** | Startpage | A highly customizable dashboard that aggregates RSS feeds and service status into a single view. |
+| **Paperless-ngx**| Document Archiving | Intelligent document management system with OCR for digitizing physical records. |
+| **Anytype** | Knowledge Base | Local-first, peer-to-peer productivity tool. |
+| **Bookstack** | Wiki | Opinionated wiki system for storing and organizing information. |
+| **Cryptpad** | Office Suite | End-to-end encrypted collaborative document editor. |
+| **Flatnotes** | Notes | A distraction-free markdown note-taking app. |
+| **Gitea** | Version Control | A painless self-hosted Git service for code and configurations. |
+
+### Social Networking
+
+Community and connection.
+
+| Service | Function | Configuration |
+| --- | --- | --- |
+| **Memos** | Thought Stream | A privacy-first, Twitter-like micro-blogging tool for capturing fleeting thoughts and ideas. |
+| **Fluxer** | Chat Server | [A self-hosted, self-managed Discord alternative. Requires a public .com domain for WebRTC voice and video to function correctly over the VPN.](https://github.com/spaceadler/A-Small-Fluxer-Guide-for-Tailscale-and-Nginx) |
 
 ### Finance & Analytics
 
@@ -299,20 +304,32 @@ The "CFO" of the homelab.
 
 | Service | Function | Configuration |
 | --- | --- | --- |
-| **Ghostfolio** | Wealth Management | Tracks net worth across multiple asset classes (stocks, crypto, ETFs). It is privacy-first, allowing for manual entry or anonymous import without linking bank credentials directly. Accessed via assets.spaceadler.local. |
-| **Maybe** | Personal Finance | A budgeting and expense tracker. Note: As the official repository has been archived, this setup utilizes a specific, stable Docker SHA or a community-maintained fork to ensure continued functionality and security. Accessed via budget.spaceadler.local. |
+| **Ghostfolio** | Wealth Management | Tracks net worth across multiple asset classes (stocks, crypto, ETFs). |
+| **Maybe** | Personal Finance | A budgeting and expense tracker. |
 
-### Storage & Synchronization
+### Tracking & Logistics
 
-The "Logistics" layer. This cluster handles file movement, downloading, and data redundancy across the ecosystem.
+Life-logging, tracking, and hobbies.
 
 | Service | Function | Configuration |
 | --- | --- | --- |
-| **FileBrowser** | Web Interface | A lightweight file manager for the underlying filesystem. It allows the upload/download of files to the Downloads or Personal folders via a web browser, bridging the gap between the server's filesystem and client devices. |
-| **Syncthing** | Synchronization | Implements the Block Exchange Protocol (BEP) for continuous, decentralized file synchronization between the Pi, a Windows PC, and Mobile devices. It handles the critical backup of the docker-compose configurations and media assets. Accessed via sync.spaceadler.local. |
-| **qBittorrent** | P2P Client | Manages peer-to-peer downloads. It is integrated with the VPN to ensure privacy during retrieval of Linux ISOs and other media. Accessed via qb.spaceadler.local. |
-| **jDownloader** | DDL Client | A headless container specialized for Direct Download Link (DDL) sites, YouTube rips, and other non-torrent content. Managed via the MyJDownloader web interface. Accessed via download.spaceadler.local. |
-| **Vaultwarden** | Password Manager | A lightweight Rust implementation of the Bitwarden server API. Stores credentials locally, fully encrypted. Accessed via vault.spaceadler.local (Requires strict HTTPS via Cloudflare or Tailscale certs for client compatibility). |
+| **Airtrail** | Flight Logging | Keeps track of flights, airports, and aircraft. |
+| **Dawarich** | Location Tracking | Self-hosted alternative to Google Location History. |
+| **Mealie** | Recipe Manager | Self-hosted recipe manager and meal planner. |
+| **Trek** | Personal Tracking | Activity and location tracking. |
+| **Yamtrack** | Media Tracking | Self-hosted MyAnimeList/Anilist-style media tracker for anime, manga, games, and shows. |
+| **Minecraft** | Gaming | A dedicated Minecraft server for local network play. |
+
+### Storage & Synchronization
+
+The "Logistics" layer handling file movement, downloading, and data redundancy.
+
+| Service | Function | Configuration |
+| --- | --- | --- |
+| **FileBrowser** | Web Interface | A lightweight file manager for the underlying filesystem to upload/download files via web browser. |
+| **Syncthing** | Synchronization | Implements BEP for continuous, decentralized file synchronization. |
+| **qBittorrent** | P2P Client | Manages peer-to-peer downloads over the VPN. |
+| **Vaultwarden** | Password Manager | Lightweight Rust implementation of the Bitwarden server API. |
 
 ## Technical Implementation & Storage Strategy
 
@@ -320,58 +337,110 @@ The "Logistics" layer. This cluster handles file movement, downloading, and data
 
 The storage architecture utilizes a Directory-as-Volume pattern. Instead of using opaque, internal Docker volumes (which are managed by the Docker daemon and harder to back up), services bind-mount specific host directories located on the 1TB SSD. This ensures that data remains accessible as standard files on the filesystem even if the Docker engine is uninstalled.
 
+<details>
+  <summary>📂 <code>backup/</code> - Layer 1 backups of application stacks</summary>
+
 ```text
-~/homelab
-├── containers/                 # Application Stacks (Docker Compose)
-│   ├── beszel/                 # Monitoring Hub & Agent
-│   ├── cup/                    # Container Update Project
-│   ├── docmost/                # Wiki & Documentation
-│   ├── filebrowser/            # Web File Manager
-│   ├── ghostfolio/             # Wealth Management
-│   ├── gitea/                  # Git Server
-│   ├── glance/                 # Startpage Dashboard
-│   ├── immich/                 # Photos & ML Pipeline
-│   ├── jdownloader/            # DDL Manager
-│   ├── karakeep/               # Bookmarks & Archiving
-│   ├── kavita/                 # Manga & eBooks
-│   ├── kiwix/                  # Offline Knowledge (ZIM)
-│   ├── maybe/                  # Finance Tracker
-│   ├── memos/                  # Micro-blogging
-│   ├── navidrome/              # Music Streaming
-│   ├── nginx/                  # Reverse Proxy
-│   ├── ollama/                 # Local LLM Backend
-│   ├── openspeedtest/          # LAN Speed Testing
-│   ├── openwebui/              # AI Chat Frontend
-│   ├── pihole/                 # DNS & AdBlock
-│   ├── qbittorrent/            # P2P Client
-│   ├── radicale/               # Calendar & Contacts
-│   ├── speedtest/              # WAN Tracker
-│   ├── stremio/                # Video Streaming
-│   ├── syncthing/              # Backup Synchronization
-│   ├── uptimekuma/             # Uptime Monitoring
-│   ├── vaultwarden/            # Password Manager
-│   └── vikunja/                # Task Management
-├── portainer/                  # Orchestration GUI
-│   └── docker-compose.yml
-└── storage/                    # Persistent Data (Bind Mount Targets)
-    ├── Downloads/              # Ingress for JDownloader/QBittorrent
-    ├── Gallery/                # Target for Immich (Originals)
-    ├── Media/
-    │   ├── Books/              # Target for Kavita
-    │   ├── Music/              # Target for Navidrome, organized by .m3u8 playlist files
-    │   └── Resources/          # Target for Kiwix
-    └── Personal/
-        ├── Code/               # Target for Gitea Repos
-        └── Documents/          # General File Storage
+backup/
+└── containers/
+    └── [timestamped_backups]
 ```
+</details>
+
+<details>
+  <summary>🐳 <code>containers/</code> - Application Stacks (Docker Compose)</summary>
+
+```text
+containers/
+├── airtrail/
+├── anytype/
+├── audiobookshelf/
+├── beszel/
+├── bookstack/
+├── cryptpad/
+├── cup/
+├── dawarich/
+├── filebrowser/
+├── flatnotes/
+├── fluxer/
+├── ghostfolio/
+├── gitea/
+├── glance/
+├── immich/
+├── karakeep/
+├── kavita/
+├── kiwix/
+├── maybe/
+├── mealie/
+├── memos/
+├── minecraft/
+├── navidrome/
+├── nginx/
+├── openspeedtest/
+├── paperless-ngx/
+├── pihole/
+├── qbittorrent/
+├── radicale/
+├── searxng/
+├── speedtest/
+├── stremio/
+├── syncthing/
+├── trek/
+├── vaultwarden/
+├── vikunja/
+└── yamtrack/
+```
+</details>
+
+<details>
+  <summary>💻 <code>dev/</code> - Version-controlled Git repositories</summary>
+
+```text
+dev/
+├── A-Small-Fluxer-Guide-for-Tailscale-and-Nginx/
+├── spacetetris/
+└── UART_TX/
+```
+</details>
+
+<details>
+  <summary>📬 <code>mailbox/</code> - Staging area for incoming files</summary>
+
+```text
+mailbox/
+└── final exams prep.md
+```
+</details>
+
+<details>
+  <summary>🗄️ <code>storage/</code> - Persistent Data (Bind Mount Targets)</summary>
+
+```text
+storage/
+├── Documents/              # Target for Paperless-ngx
+├── Downloads/              # Ingress for QBittorrent
+├── Files/                  # General file storage (FileBrowser)
+├── Gallery/                # Target for Immich (Originals)
+├── Media/                  # Target for Navidrome, Kavita, Audiobookshelf
+│   ├── Audiobooks
+│   ├── Books
+│   ├── Kiwix
+│   ├── Music
+│   ├── Podcasts
+│   ├── Recordings
+│   └── Screenshots
+└── Notes/                  # Target for Flatnotes
+```
+</details>
 
 ### Networking Strategy
 
 The network relies on DNS Sinkholing and Reverse Proxying to create a seamless local web experience that mimics the ease of SaaS.
 
-* **Tailscale ACLs:**  Ingress is restricted by Tailscale Access Control Lists. Only devices tagged `tag:trusted` (User's Phone, Laptop) can initiate connections to port 80/443 on the Pi.
-* **DNS Rewriting:** Pi-hole Wildcard A Record: `*.spaceadler.local -> 100.x.y.z`.
-* **Reverse Proxy:** Nginx listens on 80/443 and routes via Server Blocks (`proxy_pass http://container_name:port`).
+* **Tailscale Access:** Ingress is restricted via UFW which bans all IPv4 and IPv6 traffic except Tailscale. Tailscale is plug-and-play. Any user you add to your Tailnet just works, allowing you to seamlessly add friends/family to use your services by hooking into the VPN.
+* **DNS Rewriting:** Pi-hole Local DNS Records. This needs to be done for each service individually (e.g., `gallery.spaceadler.local -> 100.x.y.z`, `vault.spaceadler.local -> 100.x.y.z`).
+* **Reverse Proxy:** Nginx Proxy Manager (NPM). Simply create a new proxy host: enter your desired domain name (matching the Pi-hole record), set the Forward IP to the Pi's Tailscale IP, and specify the service's internal port from its docker-compose file.
+  * *Public Domains:* If you switch to a `.com` domain instead of `.local`, simply update the Pi-hole records and NPM domains accordingly. It is highly recommended to secure these public routes with HTTPS using NPM's built-in Let's Encrypt certificate generator.
 
 This abstraction layer allows services to run on arbitrary ports (3000, 8080, 5230) while the user only interacts with standard URLs.
 
@@ -434,19 +503,72 @@ volumes:
 
 The system employs a rigorous 3-2-1 Backup Strategy to ensure resilience against hardware failure (SSD degradation), theft, or data corruption.
 
-1. **Layer 1: Local Sync (Hot Storage)**
+1. **Layer 1: Live Application Backup (Cron)**
+* **Tool:** `zz-script_backup.sh` (Custom Bash script)
+* **Mechanism:** Dynamically finds all `docker-compose.yml` stacks, shuts them down, uses `rsync -a` to copy the `containers` folder to a timestamped directory in `~/homelab/backup/containers`, and spins them back up. This preserves exact file permissions.
+
+<details>
+  <summary>📜 Click to view: <code>zz-script_backup.sh</code> (Plug & Play)</summary>
+
+```bash
+#!/bin/bash
+set -euo pipefail
+
+# --- config ---
+USER_NAME="YOUR_USERNAME"
+USER_HOME="/home/$USER_NAME"
+ROOT_DIR="$USER_HOME/homelab/containers"
+TEMP_BASE="$USER_HOME/homelab/backup/containers"
+
+BACKUP_DATE="$(date +%F)"
+TEMP_DIR="$TEMP_BASE/$BACKUP_DATE"
+# --------------
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo "❌ This script must be run as root (use sudo)."
+    exit 1
+fi
+
+echo "📁 Creating backup directory: $TEMP_DIR"
+mkdir -p "$TEMP_DIR"
+
+echo "🔍 Searching for docker-compose files..."
+mapfile -t COMPOSE_DIRS < <(
+    find "$ROOT_DIR" -type f \( -name docker-compose.yml -o -name compose.yml \) \
+        -exec dirname {} \; | sort -u
+)
+
+echo "🛑 Stopping containers..."
+for dir in "${COMPOSE_DIRS[@]}"; do
+    (cd "$dir" && docker compose down)
+done
+
+echo "📦 Backing up data (preserving exact permissions)..."
+rsync -a "$ROOT_DIR/" "$TEMP_DIR/"
+
+echo "🚀 Restarting containers..."
+for dir in "${COMPOSE_DIRS[@]}"; do
+    (cd "$dir" && docker compose up -d)
+done
+echo "✅ Backup complete!"
+```
+</details>
+
+2. **Layer 2: Local Sync (Hot Storage)**
 * **Tool:** Syncthing.
-* **Mechanism:** Real-time sync of `/storage` folders to a local Windows computer, as well as a manual copy of the `/containers` folder.
+* **Mechanism:** Real-time sync of the `dev`, `storage`, `backup`, and `mailbox` folders to a local client machine. Active database containers are explicitly excluded from this sync to prevent corruption, relying instead on the Layer 1 backups. The `mailbox` folder serves as a staging area for incoming files.
 
-
-2. **Layer 2: Cloud Encryption (Cold Storage)**
+3. **Layer 3: Cloud Encryption (Cold Storage)**
 * **Tool:** Filen (Zero-Knowledge).
-* **Mechanism:** The Windows computer automatically encrypts and uploads the `/storage` and `/containers` folders to the cloud.
+* **Mechanism:** The client machine automatically encrypts and uploads the synced folders (including the container backups) to the cloud.
 
-
-3. **Layer 3: Disaster Recovery**
+4. **Layer 4: Disaster Recovery**
 * **Time to Recovery:** Estimated 1-2 Hours.
-* **Process:** Flash OS -> Install Docker, Tailscale, RAM optimizations -> Pull Backup from Filen -> `docker-compose up -d`.
+* **Process:** Flash OS -> Install Docker, Tailscale, RAM optimizations -> Pull Backup from Filen -> Run `docker-compose up -d`.
+
+## Getting Started
+
+Ready to deploy your own sovereign infrastructure? Check out the **[How-to-Use Guide](how-to-use.md)** for step-by-step instructions on cloning this repository, configuring your containers, and setting up automated backups.
 
 ## Conclusion
 
