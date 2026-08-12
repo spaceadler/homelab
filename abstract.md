@@ -23,7 +23,7 @@ Normally, to access your server away from home, you have to open a port on your 
 **Our Solution**: We don't open any ports. We use **Tailscale** (a Mesh VPN). It creates an invisible, cryptographically secure tunnel directly between your phone/laptop and your server. To the outside world, your server doesn't even exist. 
 
 ### 2. Files Aren't Trapped in the Matrix
-Many homelab setups trap your data inside "Docker Volumes"—hidden, complicated storage areas managed by the system. If the system breaks, rescuing your data requires a PhD in Linux.
+Many homelab setups trap your data inside "Docker Volumes", which are hidden, complicated storage areas managed by the system. If the system breaks, rescuing your data requires a PhD in Linux.
 
 **Our Solution**: We use a "Directory-as-Volume" pattern. Your photos, music, and documents are stored in plain, normal folders on your hard drive (like `/storage/Media/Music`). If everything completely breaks, you can just plug the hard drive into a normal computer and manually drag-and-drop your files to safety.
 
