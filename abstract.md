@@ -28,8 +28,8 @@ Many homelab setups trap your data inside "Docker Volumes", which are hidden, co
 **Our Solution**: We use a "Directory-as-Volume" pattern. Your photos, music, and documents are stored in plain, normal folders on your hard drive (like `/storage/Media/Music`). If everything completely breaks, you can just plug the hard drive into a normal computer and manually drag-and-drop your files to safety.
 
 ### 3. Clone-and-Play Simplicity
-Managing 40+ different applications sounds terrifying, but this repository is built using **Infrastructure as Code (IaC)**. That means the entire server is just a collection of text files (`docker-compose.yml`). If your server catches on fire, you just buy a new one, download this repository, and run a single command to bring all 40 applications back online exactly as they were.
+Managing 30 different applications sounds terrifying, but this repository is built using **Infrastructure as Code (IaC)**. That means the entire server is just a collection of text files (`docker-compose.yml`), plus one script, `install.sh`, that sets up the machine, generates every password, and starts the apps you pick. If your server catches on fire, you just buy a new one, download this repository, put your backup back, and run that one script to bring every application back online exactly as it was.
 
 ## Ready to Start?
 
-If you want to take back control of your digital life, you can use this repository as a starter kit. Check out the **[How-to-Use Guide](how-to-use.md)** to learn how to deploy this exact architecture for yourself!
+If you want to take back control of your digital life, clone this repository and run `./install.sh`. Check out the **[How-to-Use Guide](how-to-use.md)** for the step-by-step version, from a blank machine to your photos on your phone!

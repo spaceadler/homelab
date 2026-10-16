@@ -1,0 +1,22 @@
+# File Browser Quantum config, rendered by install.sh into config.yaml.
+# Reference: https://filebrowserquantum.com/en/docs/configuration/
+server:
+  database: "data/database.db"
+  cacheDir: "data/tmp"
+  sources:
+    - path: "/homelab"
+      name: Homelab
+      config:
+        defaultUserScope: "/"
+        defaultEnabled: true
+        createUserDir: false
+  maxArchiveSize: 50
+
+auth:
+  methods:
+    password:
+      enabled: true
+      minLength: 8
+      signup: false
+  adminUsername: admin
+  adminPassword: "${FILEBROWSER_ADMIN_PASSWORD}"

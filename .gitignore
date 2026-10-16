@@ -1,0 +1,41 @@
+# Everything install.sh writes is specific to one machine: settings, secrets,
+# rendered configs and app data. Only the recipes are committed.
+
+/homelab.env
+.env
+
+# App folders: commit the recipe, never the data. Ignore everything inside
+# containers/<genre>/<app>/, then let the recipe files back in.
+/containers/*/*/*
+!/containers/*/*/docker-compose.yml
+!/containers/*/*/.env.example
+!/containers/*/*/nginx.conf
+!/containers/*/*/*.template
+!/containers/*/*/configure.sh
+!/containers/*/*/pre-start.sh
+!/containers/*/*/post-start.sh
+!/containers/*/*/Dockerfile
+# ...and the static config a few apps ship with.
+!/containers/core/nginx/snippets/
+/containers/core/nginx/snippets/listen.conf
+!/containers/knowledge/4get/00-catchall.conf
+!/containers/productivity/super-productivity/proxy-nginx.conf
+!/containers/system/beszel/agent/
+/containers/system/beszel/agent/*
+!/containers/system/beszel/agent/docker-compose.yml
+!/containers/system/glance/config/
+/containers/system/glance/config/*
+!/containers/system/glance/config/glance.yml
+!/containers/system/glance/config/home.yml
+
+# storage/, backup/, dev/, mailbox/: keep the folders, not what's in them.
+/storage/**
+!/storage/**/
+!/storage/**/.gitkeep
+/backup/**
+!/backup/**/
+!/backup/**/.gitkeep
+/dev/**
+!/dev/.gitkeep
+/mailbox/**
+!/mailbox/.gitkeep

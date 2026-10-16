@@ -1,0 +1,17 @@
+# Globnotes: a web editor for the Markdown files in storage/Notes. It's the
+# same folder Obsidian or any editor can open (e.g. synced with Syncthing),
+# so the notes are never locked into this app.
+services:
+  globnotes:
+    image: alexindigo/globnotes:latest
+    container_name: globnotes
+    restart: unless-stopped
+    ports:
+      - "8487:8080"
+    volumes:
+      - ${STORAGE_DIR:?run ./install.sh}/Notes:/data
+    environment:
+      GLOBNOTES_AUTH_TYPE: ${GLOBNOTES_AUTH_TYPE:-none}
+      GLOBNOTES_USERNAME: ${GLOBNOTES_USERNAME:-}
+      GLOBNOTES_PASSWORD: ${GLOBNOTES_PASSWORD:-}
+      GLOBNOTES_SECRET_KEY: ${GLOBNOTES_SECRET_KEY:-}

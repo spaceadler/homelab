@@ -1,0 +1,26 @@
+# Syncthing: keeps folders in sync between this machine and your other
+# devices, peer to peer. It sees the whole homelab folder, so you can share
+# storage/, dev/ or mailbox/ with your laptop.
+#
+# GUI login: SYNCTHING_GUI_USER / SYNCTHING_GUI_PASSWORD from .env, set by
+# configure.sh before first start (Syncthing has no login by default).
+#
+# What it can read, it can send: the homelab folder holds every app's .env.
+# Share subfolders like storage/ rather than the root, or add a .stignore with
+# `**/.env` (scripts/backup.sh's copies included).
+services:
+  syncthing:
+    image: lscr.io/linuxserver/syncthing:latest
+    container_name: syncthing
+    hostname: syncthing
+    restart: unless-stopped
+    # Host networking for local discovery and direct connections between
+    # devices. The GUI is then port 8384 on the host, guarded by ufw.
+    network_mode: host
+    environment:
+      PUID: ${PUID:?run ./install.sh}
+      PGID: ${PGID:?run ./install.sh}
+      TZ: ${TZ:?run ./install.sh}
+    volumes:
+      - ./config:/config
+      - ${HOMELAB_DIR:?run ./install.sh}:/homelab

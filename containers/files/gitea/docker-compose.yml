@@ -1,0 +1,22 @@
+# Gitea: your own Git server. First visit shows the installer; the defaults
+# (SQLite) are fine, and the first account you register becomes the admin.
+#
+# Clone over SSH with git@git.<DOMAIN>:<user>/<repo>.git on port 222, e.g.
+#   git clone ssh://git@git.<DOMAIN>:222/<user>/<repo>.git
+services:
+  server:
+    image: docker.gitea.com/gitea:latest
+    container_name: gitea
+    restart: unless-stopped
+    environment:
+      USER_UID: ${PUID:?run ./install.sh}
+      USER_GID: ${PGID:?run ./install.sh}
+      GITEA__server__ROOT_URL: ${URL_SCHEME:-http}://git.${DOMAIN:?run ./install.sh}/
+      GITEA__server__SSH_DOMAIN: git.${DOMAIN:?run ./install.sh}
+      GITEA__server__SSH_PORT: 222
+    volumes:
+      - ./gitea:/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3000:3000"
+      - "222:22"

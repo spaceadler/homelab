@@ -1,0 +1,46 @@
+# Super Productivity: time blocking, planning and focus timers. The app keeps
+# its data in your browser; a small WebDAV server here syncs it between your
+# devices. One nginx in front serves both on the same origin:
+#
+#   /          the app
+#   /webdav/   sync target: in the app, Settings → Sync → WebDAV, URL
+#              http://schedule.<DOMAIN>/webdav/ with WEBDAV_USERNAME/PASSWORD
+#   /caldav/   your Radicale calendars, for the app's calendar integration
+services:
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: super-productivity-proxy
+    restart: unless-stopped
+    depends_on: [app, webdav]
+    environment:
+      TZ: ${TZ:?run ./install.sh}
+    volumes:
+      - ./proxy-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "5432:80"
+    # /caldav/ is proxied to Radicale's published port on the host.
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+  app:
+    image: johannesjo/super-productivity:latest
+    container_name: super-productivity
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:?run ./install.sh}
+    expose: ["80"]
+
+  webdav:
+    image: ghcr.io/hacdias/webdav:latest
+    container_name: super-productivity-webdav
+    restart: unless-stopped
+    command: ["-c", "/config.yml"]
+    environment:
+      TZ: ${TZ:?run ./install.sh}
+      # Read by webdav-config.yml through its {env} syntax.
+      WEBDAV_USERNAME: ${WEBDAV_USERNAME:?run ./install.sh}
+      WEBDAV_PASSWORD: ${WEBDAV_PASSWORD:?run ./install.sh}
+    volumes:
+      - ./webdav-config.yml:/config.yml:ro
+      - ./data/webdav:/data
+    expose: ["6065"]

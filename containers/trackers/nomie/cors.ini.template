@@ -1,0 +1,13 @@
+; Rendered by install.sh into cors.ini: lets the Nomie web app, served from
+; another origin, read and write its CouchDB database.
+[httpd]
+enable_cors = true
+
+[chttpd]
+enable_cors = true
+
+[cors]
+origins = ${URL_SCHEME}://track.${DOMAIN}, http://${TS_IP}:5005
+credentials = true
+methods = GET, PUT, POST, HEAD, DELETE
+headers = accept, authorization, content-type, origin, referer, x-csrf-token

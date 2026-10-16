@@ -1,0 +1,77 @@
+# Maybe: budgeting, accounts and expenses. Register the first account in the
+# web UI.
+#
+# Upstream's sample file hardcodes a SECRET_KEY_BASE fallback that is public
+# in their repository; anyone who knows it can forge signed cookies. Here it is
+# generated per install and required. The database and uploads live in folders
+# next to this file, so scripts/backup.sh copies them; Redis, only a job
+# queue, is a Docker volume.
+x-db-env: &db_env
+  POSTGRES_USER: maybe
+  POSTGRES_PASSWORD: ${MAYBE_DB_PASSWORD:?run ./install.sh}
+  POSTGRES_DB: maybe_production
+
+x-rails-env: &rails_env
+  <<: *db_env
+  SECRET_KEY_BASE: ${MAYBE_SECRET_KEY_BASE:?run ./install.sh}
+  SELF_HOSTED: "true"
+  RAILS_FORCE_SSL: "false"
+  RAILS_ASSUME_SSL: "false"
+  DB_HOST: db
+  DB_PORT: 5432
+  REDIS_URL: redis://redis:6379/1
+  # Optional AI features: set in .env.
+  OPENAI_ACCESS_TOKEN: ${OPENAI_ACCESS_TOKEN:-}
+
+services:
+  web:
+    image: ghcr.io/maybe-finance/maybe:latest
+    restart: unless-stopped
+    volumes:
+      - ./storage:/rails/storage
+    ports:
+      - "13400:3000"
+    environment:
+      <<: *rails_env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    image: ghcr.io/maybe-finance/maybe:latest
+    command: bundle exec sidekiq
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      <<: *rails_env
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    environment:
+      <<: *db_env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:latest
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  redis-data:

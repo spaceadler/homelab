@@ -1,0 +1,13 @@
+# Kiwix: serves every .zim archive in storage/Media/Kiwix: Wikipedia,
+# Stack Exchange, iFixit, Project Gutenberg... offline. Download archives from
+# https://library.kiwix.org and restart the container to pick up new ones.
+services:
+  kiwix-serve:
+    image: ghcr.io/kiwix/kiwix-serve:latest
+    restart: unless-stopped
+    ports:
+      - "8092:8080"
+    volumes:
+      - ${STORAGE_DIR:?run ./install.sh}/Media/Kiwix:/data
+    command:
+      - "*.zim"

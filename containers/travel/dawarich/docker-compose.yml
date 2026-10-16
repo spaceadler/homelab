@@ -1,0 +1,145 @@
+# Dawarich: your location history, a self-hosted Google Timeline. Feed it
+# from OwnTracks, Overland or the Dawarich app, or import a Google Takeout.
+#
+# The upstream compose file falls back to the database password "password"
+# and SECRET_KEY_BASE "CHANGE_ME". Here both come from .env and are
+# required: SECRET_KEY_BASE signs your login sessions, so a value that's
+# published in the docs lets anyone forge one.
+x-dawarich-env: &dawarich-env
+  RAILS_ENV: production
+  REDIS_URL: redis://dawarich_redis:6379
+  DATABASE_HOST: dawarich_db
+  DATABASE_PORT: 5432
+  DATABASE_USERNAME: postgres
+  DATABASE_PASSWORD: ${DAWARICH_DB_PASSWORD:?run ./install.sh}
+  DATABASE_NAME: dawarich_production
+  # Hostnames Rails will answer to: the app's name, plus the Tailscale IP for
+  # http://<tailscale-ip>:3001 and localhost for health checks.
+  APPLICATION_HOSTS: localhost,::1,127.0.0.1,${TS_IP:?run ./install.sh},timeline.${DOMAIN:?run ./install.sh}
+  APPLICATION_PROTOCOL: ${URL_SCHEME:-http}
+  TIME_ZONE: ${TZ:?run ./install.sh}
+  SECRET_KEY_BASE: ${DAWARICH_SECRET_KEY_BASE:?run ./install.sh}
+  PROMETHEUS_EXPORTER_ENABLED: "false"
+  RAILS_LOG_TO_STDOUT: "true"
+  SELF_HOSTED: "true"
+  STORE_GEODATA: "true"
+
+networks:
+  dawarich:
+
+services:
+  dawarich_redis:
+    image: redis:7.4-alpine
+    container_name: dawarich_redis
+    command: redis-server --save 900 1 --save 300 10 --appendonly no
+    networks: [dawarich]
+    volumes:
+      - ./dawarich_shared:/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+  dawarich_db:
+    # PostGIS with ARM64 and x86-64 builds (the official postgis image is x86 only).
+    image: imresamu/postgis:17-3.5-alpine
+    shm_size: 1G
+    container_name: dawarich_db
+    volumes:
+      - ./dawarich_db_data:/var/lib/postgresql/data
+      - ./dawarich_shared:/var/shared
+    networks: [dawarich]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DAWARICH_DB_PASSWORD:?run ./install.sh}
+      POSTGRES_DB: dawarich_production
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dawarich_production"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+  dawarich_app:
+    image: freikin/dawarich:latest
+    container_name: dawarich_app
+    volumes:
+      - ./dawarich_public:/var/app/public
+      - ./dawarich_watched:/var/app/tmp/imports/watched
+      - ./dawarich_storage:/var/app/storage
+      - ./dawarich_db_data:/dawarich_db_data
+    networks: [dawarich]
+    ports:
+      - "3001:3000"
+    stdin_open: true
+    tty: true
+    entrypoint: web-entrypoint.sh
+    command: ["bin/rails", "server", "-p", "3000", "-b", "::"]
+    restart: on-failure
+    environment:
+      <<: *dawarich-env
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+        max-file: "5"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO - http://127.0.0.1:3000/api/v1/health | grep -q '\"status\"\\s*:\\s*\"ok\"'"]
+      interval: 10s
+      retries: 30
+      start_period: 30s
+      timeout: 10s
+    depends_on:
+      dawarich_db:
+        condition: service_healthy
+        restart: true
+      dawarich_redis:
+        condition: service_healthy
+        restart: true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 4G
+
+  dawarich_sidekiq:
+    image: freikin/dawarich:latest
+    container_name: dawarich_sidekiq
+    volumes:
+      - ./dawarich_public:/var/app/public
+      - ./dawarich_watched:/var/app/tmp/imports/watched
+      - ./dawarich_storage:/var/app/storage
+    networks: [dawarich]
+    stdin_open: true
+    tty: true
+    entrypoint: sidekiq-entrypoint.sh
+    command: ["sidekiq"]
+    restart: on-failure
+    environment:
+      <<: *dawarich-env
+      BACKGROUND_PROCESSING_CONCURRENCY: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+        max-file: "5"
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f sidekiq"]
+      interval: 10s
+      retries: 30
+      start_period: 30s
+      timeout: 10s
+    depends_on:
+      dawarich_db:
+        condition: service_healthy
+        restart: true
+      dawarich_redis:
+        condition: service_healthy
+        restart: true
+      dawarich_app:
+        condition: service_healthy
+        restart: true

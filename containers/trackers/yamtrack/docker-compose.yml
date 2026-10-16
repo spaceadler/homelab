@@ -1,0 +1,26 @@
+# Yamtrack: track the movies, shows, anime, manga, books and games you've
+# watched, read or played. Register the first account in the web UI.
+services:
+  yamtrack:
+    container_name: yamtrack
+    image: ghcr.io/fuzzygrim/yamtrack:latest
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      TZ: ${TZ:?run ./install.sh}
+      SECRET: ${YAMTRACK_SECRET:?run ./install.sh}
+      REDIS_URL: redis://redis:6379
+      # Origins Django accepts form posts from (CSRF).
+      URLS: ${URL_SCHEME:-http}://catalogue.${DOMAIN:?run ./install.sh},http://${TS_IP:?run ./install.sh}:2143
+    volumes:
+      - ./db:/yamtrack/db
+    ports:
+      - "2143:8000"
+
+  redis:
+    container_name: yamtrack-redis
+    image: redis:8-alpine
+    restart: unless-stopped
+    volumes:
+      - ./redis_data:/data

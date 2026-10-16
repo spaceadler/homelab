@@ -1,4 +1,4 @@
-# A Sovereign Homelab Architecture
+# A Sovereign Homelab
 
 > Engineering a comprehensive, self-sovereign digital infrastructure architected on first principles, reclaiming data ownership through physically isolated hardware, encrypted mesh networking, and auditable Infrastructure as Code (IaC), thereby eliminating reliance on rent-seeking centralized cloud providers.
 
@@ -6,601 +6,533 @@
 ![Containerization](https://img.shields.io/badge/Containerization-Docker-blue)
 ![Network](https://img.shields.io/badge/Network-Tailscale-black)
 ![OS](https://img.shields.io/badge/OS-Debian-red)
-![Architecture](https://img.shields.io/badge/Architecture-ARM64-orange)
+![Architecture](https://img.shields.io/badge/Architecture-ARM64%20%7C%20x86--64-orange)
 
 > Are you new to self hosting? **[Click here](abstract.md)** for a TL;DR!
 
-## Table of Contents
-1. [Infrastructure & Services Overview](#infrastructure--services-overview)
-2. [Architectural Overview & Philosophy](#architectural-overview--philosophy)
-3. [Network Topology & Security Model](#network-topology--security-model)
-4. [Hardware Infrastructure](#hardware-infrastructure--provisioning)
-5. [Gateway & Authentication](#gateway--authentication)
-6. [Observability & Maintenance](#observability--maintenance)
-7. [Media & Streaming](#media--streaming)
-8. [Knowledge & Productivity](#knowledge--productivity)
-9. [Social Networking](#social-networking)
-10. [Finance & Analytics](#finance--analytics)
-11. [Tracking & Logistics](#tracking--logistics)
-12. [Storage & Synchronization](#storage--synchronization)
-13. [Technical Implementation & Storage Strategy](#technical-implementation--storage-strategy)
-14. [Deployment Strategy (IaC)](#deployment-strategy-infrastructure-as-code)
-15. [Backup & Disaster Recovery](#backup-redundancy--disaster-recovery)
+This repository is one script and about thirty apps. It turns a Raspberry Pi
+(or any 64-bit Debian or Ubuntu machine) into your own photo library, music
+streamer, password manager, notes, documents, location history, finance
+tracker and more. You can reach all of it from your phone and laptop
+anywhere in the world, and nobody else can reach any of it.
 
-## Infrastructure & Services Overview
-
-<details>
-  <summary>🏛️ Click to view: Core Infrastructure & Intelligence</summary>
-
-  ### Tailscale
-  ![Tailscale](screenshots/Tailscale.png)
-
-  ### Nginx
-  ![Nginx](screenshots/Nginx.png)
-
-  ### Pi-hole
-  ![Pi-hole](screenshots/Pi-hole.png)
-
-</details>
-
-<details>
-  <summary>📊 Click to view: Telemetry & Health</summary>
-
-  ### Beszel
-  ![Beszel](screenshots/Beszel.png)
-
-  ### Cup
-  ![Cup](screenshots/Cup.png)
-</details>
-
-<details>
-  <summary>🎬 Click to view: Media & Content</summary>
-
-  ### Immich
-  ![Immich](screenshots/Immich.png)
-
-  ### Navidrome
-  ![Navidrome](screenshots/Navidrome.png)
-
-  ### Stremio
-  ![Stremio](screenshots/Stremio.png)
-
-  ### Kavita
-  ![Kavita](screenshots/Kavita.png)
-</details>
-
-<details>
-  <summary>🧠 Click to view: Knowledge & Productivity</summary>
-
-  ### Memos
-  ![Memos](screenshots/Memos.png)
-
-  ### Vikunja
-  ![Vikunja](screenshots/Vikunja.png)
-
-  ### Glance
-  ![Glance](screenshots/Glance.png)
-</details>
-
-<details>
-  <summary>📈 Click to view: Sovereign Finance</summary>
-
-  ### Ghostfolio
-  ![Ghostfolio](screenshots/Ghostfolio.png)
-
-  ### Maybe
-  ![Maybe](screenshots/Maybe.png)
-</details>
-
-<details>
-  <summary>📁 Click to view: Data & File Management</summary>
-
-  ### File_Browser
-  ![File_Browser](screenshots/File_Browser.png)
-
-  ### syncthing
-  ![syncthing](screenshots/syncthing.png)
-
-  ### qB
-  ![qB](screenshots/qB.png)
-</details>
-
-<br>
-
-<details>
-  <summary>Click to view: Architectural Overview & Philosophy</summary>
-
-## Architectural Overview & Philosophy
-
-The `homelab` repository represents a radical departure from the prevailing model of digital consumption, which relies heavily on centralized, rent-seeking Cloud Service Providers (CSPs). In the current digital epoch, users typically lease access to their own data, like photos, documents, and sensitive financial/tax records, paying with privacy and monthly subscriptions.
-The term "If you're not buying a product, then you're the product" no longer works as most if not all major tech companies happily bill you while training their AI on *your* data.
-This project inverts that dynamic, establishing a "First Principles" architecture where the user retains absolute authority over the data lifecycle, compute resources, and access control lists (ACLs).
-
-### The Imperative of Data Sovereignty
-The primary driver for this architecture is Digital Sovereignty. Commercial cloud providers operate on models predicated on data surveillance, vendor lock-in, and the commodification of user behavior. By self-hosting critical infrastructure, we reclaim the "Digital Self." Photos stored in Immich are files on a locally owned solid-state drive, not training data for a third-party generative adversarial network. Notes in Memos and Docmost remain private cognitive artifacts rather than vectors for targeted advertising. This system replaces ubiquitous SaaS ecosystems (Google Workspace, iCloud, Spotify, Netflix, Notion) with locally hosted, privacy-respecting alternatives that offer feature parity without the privacy tax.
-
-### Security via Isolation (The Zero Trust Model)
-Traditional homelab architectures often rely on perimeter security models, exposing ports (80/443) to the public internet, secured only by a reverse proxy and tools like Fail2Ban. This project rejects that model in favor of Zero Trust Networking.
-
-1.  **No Public Ingress:** The edge router forwards no ports. Even the public IP is completely closed off after Tailscale is set up, serving strictly as an egress point.
-2.  **Mesh VPN:** The architecture leverages a Hub-and-Spoke VPN model powered by Tailscale. This creates a virtual overlay network where devices must cryptographically authenticate via a coordination server before they can even perceive the existence of the host node. This reduces the attack surface from "the entire internet" to "authenticated nodes only".
-3.  **Internal Routing:** Services are addressed via a local DNS zone (`spaceadler.local`), resolving only within the context of the encrypted mesh. This renders the infrastructure invisible to external port scanners, Shodan indexing, and automated botnets.
-
-### Infrastructure as Code (IaC)
-The operational state of the system is defined declaratively. The `docker-compose.yml` files act as the single source of truth for the entire deployment. Rebuilding the server is not a manual process of installing binaries and editing config files, but an automated orchestration of container deployment. This ensures reproducibility, version control, and rapid disaster recovery, aligning it with modern DevOps best practices.
-
-</details>
-
-## Network Topology & Security Model
-
-The network topology is designed to prioritize rigorous security without sacrificing the ease of use typically associated with local area networks. The Tailscale daemon runs on the Host Node (Raspberry Pi), advertising the device to the encrypted mesh. Client devices (phones, laptops, tablets) connect to this mesh to access services, effectively flattening the network geography. The user connects to spaceadler.local identically whether they are in the living room or on a different continent.
-
-### Mermaid Topology Diagram
-
-```mermaid
-graph TD
-%% --- STYLING DEFINITIONS ---
-    
-    %% CLIENT (The User Device) -> Currently Bright Blue
-    %% fill: Background Color | stroke: Border Color | color: Text Color
-    classDef client fill:#4A90E2,stroke:#2E5C8A,stroke-width:2px,color:#fff;
-
-    %% DNS (Pi-Hole) -> Currently Dark Navy/Grey
-    classDef dns fill:#2C3E50,stroke:#34495E,stroke-width:2px,color:#fff;
-
-    %% PROXY (Nginx) -> Currently Purple
-    classDef proxy fill:#9B59B6,stroke:#6C3483,stroke-width:2px,color:#fff;
-
-    %% SERVICES (The Containers) -> Currently Light Grey/White
-    classDef service fill:#2C3E50,stroke:#7F8C8D,stroke-width:2px,color:#fff;
-
-    %% VPN (The Tailscale Box) -> Currently Deep Midnight Blue
-    classDef vpn fill:#00004B,stroke:#00004B,stroke-width:2px,color:#fff; 
-
-    %% HOST (The Raspberry Pi Box) -> Currently White with Dashed Border
-    classDef host fill:#333333,stroke:#BDC3C7,stroke-width:2px,stroke-dasharray: 5 5;
-
-    %% NODES
-    User["Client Device<br/>(Phone / Laptop)"]:::client
-    
-    %% THE VPN TUNNEL (The Box the phone goes through)
-    VPN["🔒 Tailscale WireGuard Tunnel<br/>(Secure Gateway)"]:::vpn
-
-    subgraph Host [" ⚡ Raspberry Pi Host (100.x.y.z) "]
-        
-        PiHole["Pi-Hole<br/>(The Phonebook)"]:::dns
-        Nginx["Nginx Proxy<br/>(The Receptionist)"]:::proxy
-        
-        subgraph Containers [" Docker Containers "]
-            Music["Navidrome<br/>(Port 4533)"]:::service
-            Immich["Immich<br/>(Port 2283)"]:::service
-            AI["OpenWebUI<br/>(Port 3340)"]:::service
-            Files["FileBrowser<br/>(Port 8080)"]:::service
-            Other["Other<br/>(Port XXXX)"]:::service
-        end
-    end
-
-    %% LOGIC FLOW
-    
-    %% Step 1: The Secure Connection
-    User ==>|"1. Connects via"| VPN
-
-    %% Step 2: DNS (Through the Tunnel)
-    VPN -.->|"2. DNS Query"| PiHole
-    PiHole -.->|"3. Resolution"| VPN
-
-    %% Step 3: Traffic (Through the Tunnel to Nginx)
-    VPN ==>|"4. Encrypted Traffic"| Nginx
-
-    %% Step 4: Internal Routing
-    Nginx -->|"Music"| Music
-    Nginx -->|"Photos"| Immich
-    Nginx -->|"Chat"| AI
-    Nginx -->|"Files"| Files
-    Nginx -->|"..."| Other
-
-    %% Style the Host box
-    class Host host;
+```bash
+git clone https://github.com/spaceadler/homelab ~/homelab
+cd ~/homelab && ./install.sh
 ```
 
+`install.sh` installs Docker and Tailscale, locks the firewall, asks which
+apps you want, generates every password, and starts them. It's safe to run
+again whenever you like: that's also how you add apps and apply updates. The
+**[How-to-Use Guide](how-to-use.md)** walks through a first install step by
+step.
+
+## Table of Contents
+1. [How it works](#how-it-works)
+2. [The apps and their addresses](#the-apps-and-their-addresses)
+3. [Directory structure](#directory-structure)
+4. [Operating it](#operating-it)
+5. [First logins](#first-logins)
+6. [Security model](#security-model)
+7. [HTTPS](#https)
+8. [Backup & disaster recovery](#backup--disaster-recovery)
+9. [Adding an app](#adding-an-app)
+10. [Hardware](#hardware)
+11. [Screenshots](#screenshots)
+
+## How it works
+
+```mermaid
+graph LR
+    classDef client fill:#4A90E2,stroke:#2E5C8A,stroke-width:2px,color:#fff;
+    classDef vpn fill:#00004B,stroke:#00004B,stroke-width:2px,color:#fff;
+    classDef dns fill:#2C3E50,stroke:#34495E,stroke-width:2px,color:#fff;
+    classDef proxy fill:#9B59B6,stroke:#6C3483,stroke-width:2px,color:#fff;
+    classDef service fill:#2C3E50,stroke:#7F8C8D,stroke-width:2px,color:#fff;
+    classDef blocked fill:#7f1d1d,stroke:#ef4444,stroke-width:2px,color:#fff;
+
+    User["📱 Your devices<br/>(phone, laptop)"]:::client
+    VPN["🔒 Tailscale<br/>(WireGuard)"]:::vpn
+    LAN["🏠 Home Wi-Fi / LAN"]:::blocked
+
+    subgraph Host [" ⚡ Homelab host (100.x.y.z) "]
+        PiHole["Pi-hole :53<br/>*.homelab.local → 100.x.y.z"]:::dns
+        Nginx["Nginx :80<br/>gallery.* → :2283<br/>music.* → :4533 …"]:::proxy
+        Serve["tailscale serve :443"]:::proxy
+        Apps["Apps<br/>(one Docker stack each)"]:::service
+        Vault["Vaultwarden<br/>127.0.0.1:4345"]:::service
+    end
+
+    User ==> VPN
+    VPN -.->|"1. DNS"| PiHole
+    VPN ==>|"2. http://gallery.homelab.local"| Nginx
+    Nginx -->|"3. 127.0.0.1:port"| Apps
+    VPN ==>|"https://machine.tailnet.ts.net"| Serve --> Vault
+    LAN -. "✗ dropped by the firewall" .-> Host
+```
+
+A request for `http://gallery.homelab.local` takes three hops:
+
+1. **Name → machine.** Your device asks Pi-hole, through Tailscale's DNS
+   settings, for `gallery.homelab.local`. Pi-hole has one wildcard record:
+   *every* `<anything>.homelab.local` is this machine's Tailscale IP.
+2. **Machine → nginx.** The browser connects to that IP on port 80, inside
+   Tailscale's encrypted WireGuard tunnel.
+3. **nginx → app.** nginx looks at the name, finds the site for `gallery.*`,
+   and forwards to Immich on `127.0.0.1:2283`.
+
+**Vaultwarden is the one exception.** Password managers insist on HTTPS, so
+`tailscale serve` gives it a real certificate on this machine's tailnet name
+([details](docs/tls.md)).
+
+**Everything still works by port.** `http://<tailscale-ip>:2283` reaches
+Immich directly. The names are a convenience, not a dependency.
+
+**What the router and the internet see:** nothing. The router forwards no
+ports, and Tailscale connects outbound. Your home Wi-Fi is also locked out:
+other devices on your own network can't reach any app (see
+[Security model](#security-model)).
+
+## The apps and their addresses
+
+Core apps are always installed; everything else you pick in
+`install.sh`'s menu, by genre. Addresses below use the default domain,
+`homelab.local`. **Port** is the direct `http://<tailscale-ip>:<port>`
+address. This list is generated from
+[`containers/catalog.tsv`](containers/catalog.tsv), which is also what the
+installer reads.
+
+#### Core (always installed)
+
+| App | What it's for | Address | Port |
+| --- | --- | --- | --- |
+| Nginx | Reverse proxy: turns `<app>.<domain>` into the right port | - | 80 |
+| Pi-hole | DNS for `<app>.<domain>`, plus ad blocking | `http://dns.homelab.local` | 8081 |
+| Vaultwarden | Password manager | `https://<machine>.<tailnet>.ts.net` (`vault.homelab.local` redirects) | 4345 (this machine only) |
+
+#### System
+
+| App | What it's for | Address | Port |
+| --- | --- | --- | --- |
+| Glance | Start page and dashboard of every app | `http://home.homelab.local` | 8080 |
+| Beszel | CPU, RAM, disk and container monitoring | `http://stats.homelab.local` | 8042 |
+| Cup | Shows which container images have updates | `http://cup.homelab.local` | 9898 |
+
+#### Photos & video
+
+| App | What it's for | Address | Port |
+| --- | --- | --- | --- |
+| Immich | Photos and videos, with phone backup | `http://gallery.homelab.local` | 2283 |
+| Stremio | Streaming server for the Stremio apps | `http://watch.homelab.local` | 5543 |
+
+#### Audio
+
+| App | What it's for | Address | Port |
+| --- | --- | --- | --- |
+| Navidrome | Music streaming (Subsonic apps work too) | `http://music.homelab.local` | 4533 |
+| Audiobookshelf | Audiobooks, podcasts and e-books | `http://audiobook.homelab.local` | 13378 |
+
+#### Notes
+
+| App | What it's for | Address | Port |
+| --- | --- | --- | --- |
+| Globnotes | Markdown notes in storage/Notes (Obsidian-compatible) | `http://notes.homelab.local` | 8487 |
+| Memos | Quick thoughts, Twitter-style | `http://memos.homelab.local` | 5230 |
+| BookStack | Wiki: shelves, books, chapters, pages | `http://books.homelab.local` | 6875 |
+
+#### Knowledge
+
+| App | What it's for | Address | Port |
+| --- | --- | --- | --- |
+| Karakeep | Bookmarks that archive the page itself | `http://bookmarks.homelab.local` | 3786 |
+| Kiwix | Offline Wikipedia and other .zim archives | `http://wiki.homelab.local` | 8092 |
+| 4get | Private metasearch engine | `http://search.homelab.local` | 9364 |
+
+#### Documents
+
+| App | What it's for | Address | Port |
+| --- | --- | --- | --- |
+| Paperless-ngx | Scanned documents with OCR and search | `http://docs.homelab.local` | 8302 |
+| CryptPad | End-to-end encrypted office suite (needs [HTTPS](docs/tls.md)) | `http://workspace.homelab.local` | 7000 |
+
+#### Productivity
+
+| App | What it's for | Address | Port |
+| --- | --- | --- | --- |
+| Vikunja | Tasks, Kanban, Gantt | `http://todo.homelab.local` | 3456 |
+| Super Productivity | Time blocking and planning, synced over WebDAV | `http://schedule.homelab.local` | 5432 |
+| Radicale | Calendar and contacts (CalDAV/CardDAV) | `http://cal.homelab.local` | 5222 |
+
+#### Travel
+
+| App | What it's for | Address | Port |
+| --- | --- | --- | --- |
+| Dawarich | Location history (Google Timeline replacement) | `http://timeline.homelab.local` | 3001 |
+| TREK | Trip planner | `http://trips.homelab.local` | 3210 |
+| AirTrail | Flight log | `http://fly.homelab.local` | 9478 |
+
+#### Trackers
+
+| App | What it's for | Address | Port |
+| --- | --- | --- | --- |
+| Yamtrack | Movies, shows, anime, books and games you've watched/read/played | `http://catalogue.homelab.local` | 2143 |
+| Nomie | Life and mood tracking | `http://track.homelab.local` | 5005 |
+
+#### Finance
+
+| App | What it's for | Address | Port |
+| --- | --- | --- | --- |
+| Ghostfolio | Investment portfolio and net worth | `http://assets.homelab.local` | 3333 |
+| Maybe | Budgeting and expenses | `http://budget.homelab.local` | 13400 |
+
+#### Files
+
+| App | What it's for | Address | Port |
+| --- | --- | --- | --- |
+| Syncthing | Keeps folders in sync across your devices | `http://sync.homelab.local` | 8384 |
+| File Browser | Web file manager for the whole homelab folder | `http://storage.homelab.local` | 8090 |
+| Gitea | Git server (SSH on port 222) | `http://git.homelab.local` | 3000 |
+| qBittorrent | Torrent client, downloads to storage/Downloads | `http://qb.homelab.local` | 6420 |
+
+A few apps answer on a second name or port as well: CryptPad's sandbox at
+`workspacesb.`, Nomie's database at `trackdb.` (CouchDB, port 5984),
+Stremio's streaming server on port 11470, and Gitea's SSH on port 222.
+
+## Directory structure
+
+The repository *is* the homelab: clone it to `~/homelab` and everything
+lives inside. Files marked **(generated)** are written by `install.sh` or by
+the apps themselves, are specific to your machine, and are never committed;
+`.gitignore` keeps them out.
+
+```text
+~/homelab/
+├── install.sh              # set up, add apps, apply changes: run it anytime
+├── homelab.env.example     # template for…
+├── homelab.env             # (generated) domain, timezone, storage path, your app list
+├── containers/
+│   ├── catalog.tsv         # every app: genre, address, port, description
+│   ├── core/               # nginx · pihole · vaultwarden
+│   ├── system/             # glance · beszel · cup
+│   ├── photos-video/       # immich · stremio
+│   ├── audio/              # navidrome · audiobookshelf
+│   ├── notes/              # globnotes · memos · bookstack
+│   ├── knowledge/          # karakeep · kiwix · 4get
+│   ├── documents/          # paperless-ngx · cryptpad
+│   ├── productivity/       # vikunja · super-productivity · radicale
+│   ├── travel/             # dawarich · trek · airtrail
+│   ├── trackers/           # yamtrack · nomie
+│   ├── finance/            # ghostfolio · maybe
+│   └── files/              # syncthing · filebrowser · gitea · qbittorrent
+├── storage/                # your files, as plain folders (or STORAGE_DIR elsewhere)
+│   ├── Documents/          #   Paperless-ngx archive
+│   ├── Downloads/          #   qBittorrent
+│   ├── Files/              #   general files
+│   ├── Gallery/            #   Immich: originals, thumbnails, encoded video
+│   ├── Inbox/              #   drop scans here; Paperless-ngx imports them
+│   ├── Media/              #   Music, Audiobooks, Podcasts, Books, Kiwix, …
+│   └── Notes/              #   Markdown notes: Globnotes, Obsidian, any editor
+├── backup/containers/      # (generated) dated copies from scripts/backup.sh
+├── dev/                    # your own git repositories (synced with Syncthing)
+├── mailbox/                # inbox for files you haven't sorted yet
+├── scripts/
+│   ├── backup.sh           # Layer 1 backup (see below)
+│   └── renew-certs.sh      # only for HTTPS with your own domain
+└── docs/
+    └── tls.md              # HTTPS: Vaultwarden by default, every app optionally
+```
+
+Your files stay plain files: no Docker volumes hide your photos or music.
+If everything else breaks, plug the disk into any computer and copy
+`storage/` off it.
+
+### Inside an app folder
+
+Every app follows the same shape. `containers/photos-video/immich/`, for
+example:
+
+```text
+immich/
+├── docker-compose.yml   # the recipe: images, ports, mounts, settings
+├── .env.example         # its settings, with placeholders where secrets go
+├── nginx.conf           # its route: server_name gallery.* → 127.0.0.1:2283
+├── .env                 # (generated) globals + this app's generated secrets, chmod 600
+└── postgres/            # (generated) the app's own data
+```
+
+Some apps also have a `*.template` (a config file that needs your domain,
+rendered to the same name without `.template`), or a hook that
+`install.sh` runs at the right moment. `configure.sh` runs on every install
+(e.g. Syncthing pre-seeds its GUI login), `pre-start.sh` can hold an app
+back (Kiwix waits until you have a `.zim` file), and `post-start.sh` runs
+once it's up (Vaultwarden sets up `tailscale serve`).
+
+You can work in any app folder with plain Docker Compose: every `.env`
+carries the global settings too, so `docker compose up -d` there just
+works.
+
+## Operating it
+
+Everyday commands, all run from `~/homelab`:
+
+| To… | Run |
+| --- | --- |
+| Add or remove apps | `./install.sh`, then tick or untick in the menu |
+| Apply a change to `homelab.env` (domain, timezone, storage path) | `./install.sh` |
+| Update this repo | `git pull && ./install.sh` |
+| See what's running | `docker ps`, or the Glance and Beszel dashboards |
+| Read an app's logs | `cd containers/<genre>/<app> && docker compose logs -f` |
+| Restart an app | `cd containers/<genre>/<app> && docker compose restart` |
+| Change one app's settings | edit its `.env`, then `docker compose up -d` in its folder |
+| Stop an app | `cd containers/<genre>/<app> && docker compose down` (its data stays) |
+| Update one app | `cd containers/<genre>/<app> && docker compose pull && docker compose up -d` |
+| Update every running app | see below |
+| Find a password | `grep -h PASSWORD containers/*/*/.env` |
+
+To update every running app in one go:
+
+```bash
+for d in containers/*/*/; do
+  (cd "$d" && [ -n "$(docker compose ps -q 2>/dev/null)" ] && docker compose pull -q && docker compose up -d)
+done
+docker image prune -f   # clear out the old image versions
+```
+
+Cup (`cup.homelab.local`) shows which apps have updates waiting, so you can
+read the changelogs first.
+
+**How `install.sh` behaves:**
+
+- **It doesn't prompt** with `--apps "immich memos …"` or `--yes`.
+  `--apps` sets the *whole* list, so name everything you want.
+- **Secrets are made once and kept.** Re-running never changes a password.
+  If a newer version of the repo adds a setting to an app's `.env.example`,
+  it's appended to your `.env`.
+- **It never stops or deletes anything.** Unticking an app removes its
+  route and dashboard entry; `docker compose down` in its folder stops it.
+- **`--no-host`** skips installing packages and the firewall, for a machine
+  that's already set up. **`--no-start`** writes the config without
+  starting anything.
+
+## First logins
+
+Every app has its own accounts, on top of Tailscale. Most work the same way:
+on your first visit, you create the first account and it becomes the admin.
+Do that before you share your tailnet with anyone. The exceptions:
+
+| App | First login |
+| --- | --- |
+| Vaultwarden | Sign-ups are off. Open `/admin` with `VAULTWARDEN_ADMIN_TOKEN` from its `.env`, invite your email, then register with it. Afterwards, empty the token in `.env` and `docker compose up -d` to close `/admin`. |
+| Pi-hole | `PIHOLE_PASSWORD` |
+| Paperless-ngx | `PAPERLESS_ADMIN_USER` / `PAPERLESS_ADMIN_PASSWORD` |
+| File Browser | `admin` / `FILEBROWSER_ADMIN_PASSWORD` (reset to this on every start, so change it in `.env`) |
+| Syncthing | `SYNCTHING_GUI_USER` / `SYNCTHING_GUI_PASSWORD` |
+| Radicale | `RADICALE_USER` / `RADICALE_PASSWORD` |
+| Super Productivity sync | `WEBDAV_USERNAME` / `WEBDAV_PASSWORD`, under Settings → Sync → WebDAV |
+| Nomie's database | `admin` / `NOMIE_COUCHDB_PASSWORD`, under Settings → Storage → CouchDB |
+| Dawarich | Creates an admin `demo@dawarich.app` on first start; its post-start hook replaces the public default password with `DAWARICH_ADMIN_PASSWORD`. Change the email once you're in. |
+| BookStack | **Its built-in default: `admin@admin.com` / `password`. Change both right away.** |
+| qBittorrent | User `admin` with a temporary password, which `install.sh` prints after the first start. |
+| Gitea | Shows an installer on first visit; the defaults are fine. |
+| Globnotes | No login by default, because being on your tailnet is the login. Set `GLOBNOTES_AUTH_TYPE=password` in its `.env` to add one. |
+
+Each value lives in that app's `.env`, e.g.
+`containers/documents/paperless-ngx/.env`.
+
+## Security model
+
+The goal: the homelab must not be reachable from the internet or from your
+home network, only from devices on your tailnet.
+
+- **The router forwards no ports.** Tailscale makes outbound connections
+  and punches through NAT, so there's nothing to forward.
+- **The firewall blocks the LAN.** `install.sh` sets up two things. First,
+  ufw denies every incoming connection on the physical network cards
+  (`eth0`, `wlan0`, …), which covers services running on the host.
+  Second, ports published by Docker containers skip ufw's rules entirely
+  (Docker routes them through its own forwarding chain), so it adds a rule
+  to Docker's `DOCKER-USER` chain that drops new connections from those
+  same cards. Together they mean: from the LAN, nothing answers; over
+  `tailscale0`, everything does. Re-run `install.sh` after adding a
+  network card.
+- **Your tailnet is the key.** With Tailscale's default policy, every
+  member of your tailnet can reach every port on this machine. If you
+  invite friends or family, write an access policy in the
+  [Tailscale admin console](https://login.tailscale.com/admin/acls) that
+  grants each person only the apps they use. Also turn on device approval
+  and Tailnet Lock, so a stolen login can't add a new device.
+- **Secrets are unique to each install.** Every password and key is
+  generated on your machine by `openssl`. They live in each app's `.env`
+  (`chmod 600`) and are never committed. Where an upstream compose file
+  ships a public default (Dawarich's `SECRET_KEY_BASE=CHANGE_ME`, Maybe's
+  sample key), this repo makes the value required and generates it.
+- **Vaultwarden is HTTPS-only.** It's bound to `127.0.0.1`, reachable only
+  through `tailscale serve` (or nginx in HTTPS mode), and sign-ups are off.
+
+Things to know, so nothing surprises you:
+
+- **Some containers can control Docker.** Glance, Cup and the Beszel agent
+  mount `/var/run/docker.sock` to show your containers. Docker's API has no
+  read-only mode, so each of them could control Docker if it were
+  compromised. Leave out an app you don't need.
+- **Two apps see the whole homelab folder.** Syncthing and File Browser
+  see all of `~/homelab`, including every `.env`. That's what lets you
+  sync or browse anything, but it also means a Syncthing share of the
+  repo's root sends your secrets to that device. Share subfolders (like
+  `storage/`) instead, or add `**/.env` to `.stignore`.
+- **`scripts/backup.sh` copies secrets too.** Its copies include every
+  `.env`, so treat wherever the backups go as holding the keys to the lab.
+
+## HTTPS
+
+Plain HTTP on the tailnet is already encrypted, because it runs inside
+WireGuard. HTTPS adds the browser padlock, which a few apps need:
+
+- **Vaultwarden** gets HTTPS by default, through `tailscale serve` and a
+  real certificate for your machine's tailnet name. You enable HTTPS
+  certificates once in the Tailscale admin console.
+- **Every app** can get HTTPS with your own domain and a wildcard Let's
+  Encrypt certificate, issued through DNS, so no port is opened and no
+  record is published. Put the certificate in
+  `containers/core/nginx/letsencrypt/` and `install.sh` switches every app,
+  setting and redirect over to HTTPS.
+
+Step-by-step for both: **[docs/tls.md](docs/tls.md)**.
+
+## Backup & disaster recovery
+
+A 3-2-1 strategy: three copies, on two kinds of storage, one of them
+off-site.
+
+1. **Layer 1: application backup.** `sudo ./scripts/backup.sh` stops every
+   running stack, copies `containers/` (configs, `.env` secrets and app
+   databases) to `backup/containers/<date>/` with exact permissions, and
+   starts them again. Stopping is what makes the database copies
+   consistent, so the lab is briefly offline; run it at a quiet hour (e.g.
+   from root's crontab).
+2. **Layer 2: local sync (hot storage).** Syncthing mirrors `storage/`,
+   `backup/`, `dev/` and `mailbox/` to another machine at home, as they
+   change.
+3. **Layer 3: encrypted cloud (cold storage).** That machine uploads the
+   synced folders, container backups included, to a zero-knowledge cloud
+   (Filen), encrypted before they leave.
+
+**Recovering on a new machine** (about an hour, most of it copying):
+
+```bash
+# 1. Fresh 64-bit Raspberry Pi OS / Debian / Ubuntu, then:
+git clone https://github.com/spaceadler/homelab ~/homelab
+# 2. Put your files back: storage/ from Syncthing or Filen, and the latest
+#    container backup over containers/:
+sudo rsync -a ~/backup-copy/containers/<date>/ ~/homelab/containers/
+# 3. Run the installer. It keeps the restored .env files (your passwords)
+#    and picks up the new machine's Tailscale IP.
+cd ~/homelab && ./install.sh
+```
+
+## Adding an app
+
+1. **Add a row** to `containers/catalog.tsv`: genre, folder name,
+   subdomain, port, icon, display name, one-line description.
+2. **Create `containers/<genre>/<app>/` with:**
+   - `docker-compose.yml`. Use `${PUID}`, `${PGID}`, `${TZ}`,
+     `${DOMAIN}`, `${URL_SCHEME}`, `${STORAGE_DIR}`, `${HOMELAB_DIR}` and
+     `${TS_IP}` from the globals. Write `${VAR:?run ./install.sh}` for
+     anything required, so a missing value fails loudly instead of
+     becoming empty. The rule for storage: anything you'd lose goes in a
+     `./folder`, which backups copy and you can move to a new machine.
+     Things the app rebuilds by itself (caches, Redis job queues, search
+     indexes, downloaded models) go in Docker volumes, so they don't
+     bloat the backups.
+   - `.env.example`. Secrets are placeholders that `install.sh` fills in
+     once: `__PASS__` (32 letters and digits), `__HEX32__`, `__HEX64__`,
+     `__HEX128__`, and `__B64_32__`.
+   - `nginx.conf`, a `server` block with `include snippets/listen.conf;`,
+     `server_name <subdomain>.*;` and a `location /` that proxies to
+     `127.0.0.1:<port>` with `include snippets/proxy.conf;`. Copy any
+     app's.
+   - **Optionally**, `*.template` files and `configure.sh` /
+     `pre-start.sh` / `post-start.sh` hooks. Hooks run from the app folder
+     with its `.env` loaded, plus `$DOCKER`, `$HOMELAB_APPS`,
+     `$HOMELAB_CATALOG`, `$HOMELAB_SITES` and a `set_env KEY VALUE`
+     helper. `pre-start.sh` exiting with 10 means "don't start this yet".
+3. **If the app ships extra static config,** whitelist it in
+   `.gitignore`. Everything else in an app folder is ignored by design.
+4. **Test it:** `./install.sh --apps "<everything you run> <app>"`.
+
 <details>
-  <summary>Click to view: Traffic Flow Analysis & Packet Lifecycle</summary>
+  <summary>Hardware</summary>
 
-## Traffic Flow Analysis & Packet Lifecycle
+## Hardware
 
-1. **Resolution:** The client device requests a service URL, such as docmost.spaceadler.local. If the device is connected to the Tailscale network, the DNS request is intercepted by the split-DNS configuration. The device is must be configured to use the Pi-hole container as its DNS resolver.
-2. **Routing:** Pi-hole receives the query and matches it against its local DNS records (configured via dnsmasq.d or the UI). It returns the Tailscale IP address (e.g., 100.x.y.z) of the Raspberry Pi. Crucially, this IP is non-routable on the public internet.
-3. **Transport:** The client initiates a connection to that IP. Tailscale encrypts the packet using the WireGuard protocol and punches a hole through the NAT (Network Address Translation) layers to reach the Raspberry Pi directly. This is peer-to-peer (P2P) communication facilitated by DERP (Designated Encrypted Relay for Packets) servers only when a direct connection cannot be established.
-4. **Ingress:** The encrypted packet arrives at the Pi's virtual network interface. The OS decrypts it and routes it to Nginx.
-5. **Proxying:** Nginx inspects the HTTP Host header (e.g., docmost.spaceadler.local). Based on the server block configuration, it proxies the request to the specific internal Docker container IP/hostname and port (e.g., hostname:3000).
-
-</details>
-
-<details>
-  <summary>Click to view: Hardware Infrastructure & Provisioning</summary>
-
-## Hardware Infrastructure & Provisioning
-
-The physical foundation of the sovereign lab is chosen for a specific balance of energy efficiency (low OPEX) and I/O throughput (performance). The system is built around the Raspberry Pi 4 Model B (8GB). The 8GB RAM variant is a strict requirement to support the memory-intensive microservices architecture, particularly the machine learning pipelines within Immich and Ollama processing.
+The reference machine is a Raspberry Pi 4 Model B (8 GB). It's chosen for
+its balance of power draw and I/O, though any 64-bit x86 machine works just
+as well.
 
 | Component | Specification | Purpose & Justification |
 | --- | --- | --- |
-| **Compute Node** | Raspberry Pi 4 Model B | **8GB RAM** variant is a strict requirement to support memory-intensive microservices (Ollama, Immich). |
-| **Primary Storage** | 1TB SSD (SATA via USB 3.0) | Hosts the OS (Debian), Docker volumes, and media assets. Replaces the MicroSD card to mitigate corruption risk. |
-| **Boot Media** | USB MSD | The system boots directly from the SSD (EEPROM config `BOOT_ORDER=0xf41`), bypassing the SD card interface. |
-| **Power** | USB-C Supply | Ensuring stable voltage (5.1V/3A) to prevent SSD brownouts. |
-| **Network** | Gigabit Ethernet | Hardwired to the main router to ensure low latency and maximum throughput for streaming media (4K content) and large file transfers. |
+| **Compute Node** | Raspberry Pi 4 Model B | The **8GB RAM** variant handles the memory-hungry apps (Immich's machine learning especially). |
+| **Primary Storage** | 1TB SSD (SATA via USB 3.0) | Holds the OS, the apps and every file. Replaces the MicroSD card to avoid corruption. |
+| **Boot Media** | USB MSD | Boots straight from the SSD (EEPROM `BOOT_ORDER=0xf41`), bypassing the SD card. |
+| **Power** | USB-C Supply | A stable 5.1V/3A supply prevents SSD brownouts. |
+| **Network** | Gigabit Ethernet | Wired to the router for streaming and large transfers. |
+
+The Pi-specific preparation (USB boot, zram and swap) is in the
+[How-to-Use Guide](how-to-use.md#1-prepare-the-machine).
 
 </details>
 
 <details>
-  <summary>Click to view: Initialization Protocol: From Silicon to Service</summary>
+  <summary>Screenshots</summary>
 
-## Initialization Protocol: From Silicon to Service
+## Screenshots
 
-Setting up the hardware requires specific firmware interventions to enable stable USB booting, a prerequisite for a "production-grade" RPi server.
+### Tailscale
+![Tailscale](screenshots/Tailscale.png)
 
-1. Firmware Update (EEPROM):
-* The Raspberry Pi 4's bootloader (EEPROM) must be updated to a version that supports USB Mass Storage Boot reliably.
-* Command: sudo rpi-eeprom-update checks for available updates.
-* Configuration: The boot order is modified using rpi-eeprom-config --edit to set BOOT_ORDER=0xf41. This code instructs the Pi to attempt booting from the USB device (4) first, and only failover to the SD card (1) if USB fails.
+### Pi-hole
+![Pi-hole](screenshots/Pi-hole.png)
 
-2. OS Flash:
-* OS: Raspberry Pi OS (based on Debian Bookworm 64-bit). The 64-bit kernel is essential for MongoDB (used by some containers) and allows processes to address more than 4GB of RAM.
-* Method: The OS image is flashed directly onto the SSD.
-* RAM Optimization: Use zram-tools and allocate 200% of the physical RAM, continue by add a swap file in the SSD worth 16GB, and finish by editing `/etc/fstab` to add zram (pri=100) and the swap (pri=50) so that if the zram is fully used, it starts offloading to the SSD.
+### Glance
+![Glance](screenshots/Glance.png)
 
-3. Tailscale Bootstrap:
-* Before Docker is even installed, Tailscale is deployed to secure the node.
-* Command: tailscale up --auth-key=tskey-auth-xxxx authenticates the node headlessly.
-* Lockdown: Once Tailscale is active, ufw (Uncomplicated Firewall) is configured to deny all incoming traffic on Tailscale traffic, this ensures the device is invisible outside the network.
+### Beszel
+![Beszel](screenshots/Beszel.png)
+
+### Cup
+![Cup](screenshots/Cup.png)
+
+### Immich
+![Immich](screenshots/Immich.png)
+
+### Navidrome
+![Navidrome](screenshots/Navidrome.png)
+
+### Stremio
+![Stremio](screenshots/Stremio.png)
+
+### Memos
+![Memos](screenshots/Memos.png)
+
+### Vikunja
+![Vikunja](screenshots/Vikunja.png)
+
+### Ghostfolio
+![Ghostfolio](screenshots/Ghostfolio.png)
+
+### Maybe
+![Maybe](screenshots/Maybe.png)
+
+### File Browser
+![File_Browser](screenshots/File_Browser.png)
+
+### Syncthing
+![syncthing](screenshots/syncthing.png)
+
+### qBittorrent
+![qB](screenshots/qB.png)
 
 </details>
-
-## The Stack
-
-"You cannot manage what you cannot measure."
-
-### Gateway & Authentication
-
-The bouncers and traffic controllers.
-
-| Service | Function | Configuration |
-| --- | --- | --- |
-| **Tailscale** | Mesh VPN | Enforces the perimeter. It acts as the virtual network layer between the normal internet and this self-hosted ecosystem, using normal Tailscale users as the gatekeeper to the network. |
-| **Nginx** | Reverse Proxy | Maps internal Docker ports (e.g., 3000, 8080) to user-friendly subdomains (docmost.spaceadler.local). Handles SSL termination, allowing encrypted HTTPS connections even for local traffic. |
-| **Pi-hole** | DNS & Ad Blocking | Serves as the authoritative DNS server for the .local domain. It is configured with Local DNS Records (CNAME/A) to rewrite *.spaceadler.local to the internal Tailscale IP of the host. |
-| **Searxng** | Metasearch Engine | A privacy-respecting, hackable metasearch engine that aggregates results from more than 70 search services while preventing user tracking and profiling. |
-
-### Observability & Maintenance
-
-System health and monitoring.
-
-| Service | Function | Configuration |
-| --- | --- | --- |
-| **Beszel** | Monitoring | A specialized hub-and-agent monitor designed for low-resource environments. The Hub visualizes historical data, critical for diagnosing thermal throttling on the Pi. |
-| **Cup** | Image Updater | Scans Docker Hub and GHCR for new image digests. Provides a dashboard to review changelogs before applying updates. It ensures the stack remains secure but stable. |
-| **OpenSpeedTest** | LAN Testing | A lightweight HTML5 speed test server. Used to verify internal LAN throughput and WiFi bottlenecks. |
-| **Speedtest** | WAN Monitoring | Runs scheduled CLI speed tests against external Ookla servers to log WAN performance over time. |
-
-### Media & Streaming
-
-The "Entertainment Center." This cluster replaces Spotify, Netflix, iCloud/Google Photos, and Kindle.
-
-| Service | Function | Configuration |
-| --- | --- | --- |
-| **Immich** | Photos | A comprehensive solution using machine learning (CLIP, facial recognition) to organize photos. Supports background backup from mobile devices. |
-| **Navidrome** | Music Streamer | A highly efficient Go binary that implements the Subsonic API for streaming FLAC and MP3 libraries. |
-| **Stremio** | Video Hub | The server component (stremio-server) acts as a bridge for the Stremio client, offloading resolution logic. |
-| **Kavita** | E-book Server | Specialized for ePubs, CBZ, and PDFs. It provides a web-based reader with progress synchronization across devices. |
-| **Kiwix** | Offline Knowledge | Hosts ZIM files (Wikipedia, iFixit) ensuring access to the sum of human knowledge even during outages. |
-| **Audiobookshelf** | Audiobooks | Self-hosted podcast and audiobook server with progress syncing across mobile clients. |
-
-### Knowledge & Productivity
-
-The "Second Brain" and document management.
-
-| Service | Function | Configuration |
-| --- | --- | --- |
-| **Vikunja** | Task Management | A powerful to-do list application with Kanban boards, Gantt charts, and sub-tasks. |
-| **Karakeep** | Web Archiving | Bookmarks URLs, caches the content (preventing link rot), and uses the local AI (Ollama) to auto-tag. |
-| **Radicale** | CalDAV/CardDAV | A lightweight server to sync calendars and contact lists across devices. |
-| **Glance** | Startpage | A highly customizable dashboard that aggregates RSS feeds and service status into a single view. |
-| **Paperless-ngx**| Document Archiving | Intelligent document management system with OCR for digitizing physical records. |
-| **Anytype** | Knowledge Base | Local-first, peer-to-peer productivity tool. |
-| **Bookstack** | Wiki | Opinionated wiki system for storing and organizing information. |
-| **Cryptpad** | Office Suite | End-to-end encrypted collaborative document editor. |
-| **Flatnotes** | Notes | A distraction-free markdown note-taking app. |
-| **Gitea** | Version Control | A painless self-hosted Git service for code and configurations. |
-
-### Social Networking
-
-Community and connection.
-
-| Service | Function | Configuration |
-| --- | --- | --- |
-| **Memos** | Thought Stream | A privacy-first, Twitter-like micro-blogging tool for capturing fleeting thoughts and ideas. |
-| **Fluxer** | Chat Server | [A self-hosted, self-managed Discord alternative. Requires a public .com domain for WebRTC voice and video to function correctly over the VPN.](https://github.com/spaceadler/A-Small-Fluxer-Guide-for-Tailscale-and-Nginx) |
-
-### Finance & Analytics
-
-The "CFO" of the homelab.
-
-| Service | Function | Configuration |
-| --- | --- | --- |
-| **Ghostfolio** | Wealth Management | Tracks net worth across multiple asset classes (stocks, crypto, ETFs). |
-| **Maybe** | Personal Finance | A budgeting and expense tracker. |
-
-### Tracking & Logistics
-
-Life-logging, tracking, and hobbies.
-
-| Service | Function | Configuration |
-| --- | --- | --- |
-| **Airtrail** | Flight Logging | Keeps track of flights, airports, and aircraft. |
-| **Dawarich** | Location Tracking | Self-hosted alternative to Google Location History. |
-| **Mealie** | Recipe Manager | Self-hosted recipe manager and meal planner. |
-| **Trek** | Personal Tracking | Activity and location tracking. |
-| **Yamtrack** | Media Tracking | Self-hosted MyAnimeList/Anilist-style media tracker for anime, manga, games, and shows. |
-| **Minecraft** | Gaming | A dedicated Minecraft server for local network play. |
-
-### Storage & Synchronization
-
-The "Logistics" layer handling file movement, downloading, and data redundancy.
-
-| Service | Function | Configuration |
-| --- | --- | --- |
-| **FileBrowser** | Web Interface | A lightweight file manager for the underlying filesystem to upload/download files via web browser. |
-| **Syncthing** | Synchronization | Implements BEP for continuous, decentralized file synchronization. |
-| **qBittorrent** | P2P Client | Manages peer-to-peer downloads over the VPN. |
-| **Vaultwarden** | Password Manager | Lightweight Rust implementation of the Bitwarden server API. |
-
-## Technical Implementation & Storage Strategy
-
-### Storage Strategy: The Directory-as-Volume Pattern
-
-The storage architecture utilizes a Directory-as-Volume pattern. Instead of using opaque, internal Docker volumes (which are managed by the Docker daemon and harder to back up), services bind-mount specific host directories located on the 1TB SSD. This ensures that data remains accessible as standard files on the filesystem even if the Docker engine is uninstalled.
-
-<details>
-  <summary>📂 <code>backup/</code> - Layer 1 backups of application stacks</summary>
-
-```text
-backup/
-└── containers/
-    └── [timestamped_backups]
-```
-</details>
-
-<details>
-  <summary>🐳 <code>containers/</code> - Application Stacks (Docker Compose)</summary>
-
-```text
-containers/
-├── airtrail/
-├── anytype/
-├── audiobookshelf/
-├── beszel/
-├── bookstack/
-├── cryptpad/
-├── cup/
-├── dawarich/
-├── filebrowser/
-├── flatnotes/
-├── fluxer/
-├── ghostfolio/
-├── gitea/
-├── glance/
-├── immich/
-├── karakeep/
-├── kavita/
-├── kiwix/
-├── maybe/
-├── mealie/
-├── memos/
-├── minecraft/
-├── navidrome/
-├── nginx/
-├── openspeedtest/
-├── paperless-ngx/
-├── pihole/
-├── qbittorrent/
-├── radicale/
-├── searxng/
-├── speedtest/
-├── stremio/
-├── syncthing/
-├── trek/
-├── vaultwarden/
-├── vikunja/
-└── yamtrack/
-```
-</details>
-
-<details>
-  <summary>💻 <code>dev/</code> - Version-controlled Git repositories</summary>
-
-```text
-dev/
-├── A-Small-Fluxer-Guide-for-Tailscale-and-Nginx/
-├── spacetetris/
-└── UART_TX/
-```
-</details>
-
-<details>
-  <summary>📬 <code>mailbox/</code> - Staging area for incoming files</summary>
-
-```text
-mailbox/
-└── final exams prep.md
-```
-</details>
-
-<details>
-  <summary>🗄️ <code>storage/</code> - Persistent Data (Bind Mount Targets)</summary>
-
-```text
-storage/
-├── Documents/              # Target for Paperless-ngx
-├── Downloads/              # Ingress for QBittorrent
-├── Files/                  # General file storage (FileBrowser)
-├── Gallery/                # Target for Immich (Originals)
-├── Media/                  # Target for Navidrome, Kavita, Audiobookshelf
-│   ├── Audiobooks
-│   ├── Books
-│   ├── Kiwix
-│   ├── Music
-│   ├── Podcasts
-│   ├── Recordings
-│   └── Screenshots
-└── Notes/                  # Target for Flatnotes
-```
-</details>
-
-### Networking Strategy
-
-The network relies on DNS Sinkholing and Reverse Proxying to create a seamless local web experience that mimics the ease of SaaS.
-
-* **Tailscale Access:** Ingress is restricted via UFW which bans all IPv4 and IPv6 traffic except Tailscale. Tailscale is plug-and-play. Any user you add to your Tailnet just works, allowing you to seamlessly add friends/family to use your services by hooking into the VPN.
-* **DNS Rewriting:** Pi-hole Local DNS Records. This needs to be done for each service individually (e.g., `gallery.spaceadler.local -> 100.x.y.z`, `vault.spaceadler.local -> 100.x.y.z`).
-* **Reverse Proxy:** Nginx Proxy Manager (NPM). Simply create a new proxy host: enter your desired domain name (matching the Pi-hole record), set the Forward IP to the Pi's Tailscale IP, and specify the service's internal port from its docker-compose file.
-  * *Public Domains:* If you switch to a `.com` domain instead of `.local`, simply update the Pi-hole records and NPM domains accordingly. It is highly recommended to secure these public routes with HTTPS using NPM's built-in Let's Encrypt certificate generator.
-
-This abstraction layer allows services to run on arbitrary ports (3000, 8080, 5230) while the user only interacts with standard URLs.
-
-## Deployment Strategy (Infrastructure as Code)
-
-The deployment utilizes Docker Compose for modularity. While a monolithic `docker-compose.yml` is possible, services are grouped into logical stacks (folders) to prevent dependency hell and allow independent updates. The root directory contains folders like containers, portainer, and storage.
-
-Below is a Docmost `docker-compose.yml` example.
-
-<details>
-  <summary>Click to view: Docmost docker-compose.yml</summary>
-
-```yaml
-services:
-  docmost:
-    image: docmost/docmost:latest
-    container_name: docmost            # explicit name for easier log management
-    depends_on:
-      - db                             # waits for postgres to start before launching
-      - redis                          # waits for redis cache to initialize
-    environment:
-      # NETWORK CONFIGURATION
-      # The internal Tailscale IP. Nginx proxies traffic here; Pi-hole resolves the DNS.
-      APP_URL: "http://100.x.y.z:3000" 
-      
-      # SECURITY
-      # Critical: Generate a random 32-char string (openssl rand -hex 32)
-      APP_SECRET: "REPLACE_WITH_LONG_SECRET" 
-      
-      # DATABASE CONNECTIONS
-      # Connects to the 'db' service defined below on internal Docker network
-      DATABASE_URL: "postgresql://docmost:STRONG_DB_PASSWORD@db:5432/docmost?schema=public"
-      REDIS_URL: "redis://redis:6379"
-    ports:
-      - "3000:3000"                    # Exposes port 3000 to the host (accessible via Tailscale IP)
-    restart: unless-stopped            # Auto-heals if the process crashes
-    volumes:
-      - docmost:/app/data/storage      # Persists uploads/attachments to a named volume
-
-  db:
-    image: postgres:16-alpine          # Alpine variant for smaller footprint
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: docmost             # Auto-creates this database on first init
-      POSTGRES_USER: docmost
-      POSTGRES_PASSWORD: STRONG_DB_PASSWORD # Must match the DATABASE_URL above
-    volumes:
-      - db_data:/var/lib/postgresql/data # Critical: Persists the actual database files
-
-  redis:
-    image: redis:7.2-alpine
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data               # Persists the cache state (optional but recommended)
-
-volumes:
-  docmost:                             # Storage for file uploads
-  db_data:                             # Storage for the SQL database
-  redis_data:                          # Storage for Redis dump.rdb
-```
-</details>
-
-## Backup, Redundancy, & Disaster Recovery
-
-The system employs a rigorous 3-2-1 Backup Strategy to ensure resilience against hardware failure (SSD degradation), theft, or data corruption.
-
-1. **Layer 1: Live Application Backup (Cron)**
-* **Tool:** `zz-script_backup.sh` (Custom Bash script)
-* **Mechanism:** Dynamically finds all `docker-compose.yml` stacks, shuts them down, uses `rsync -a` to copy the `containers` folder to a timestamped directory in `~/homelab/backup/containers`, and spins them back up. This preserves exact file permissions.
-
-<details>
-  <summary>📜 Click to view: <code>zz-script_backup.sh</code> (Plug & Play)</summary>
-
-```bash
-#!/bin/bash
-set -euo pipefail
-
-# --- config ---
-USER_NAME="YOUR_USERNAME"
-USER_HOME="/home/$USER_NAME"
-ROOT_DIR="$USER_HOME/homelab/containers"
-TEMP_BASE="$USER_HOME/homelab/backup/containers"
-
-BACKUP_DATE="$(date +%F)"
-TEMP_DIR="$TEMP_BASE/$BACKUP_DATE"
-# --------------
-
-if [ "$(id -u)" -ne 0 ]; then
-    echo "❌ This script must be run as root (use sudo)."
-    exit 1
-fi
-
-echo "📁 Creating backup directory: $TEMP_DIR"
-mkdir -p "$TEMP_DIR"
-
-echo "🔍 Searching for docker-compose files..."
-mapfile -t COMPOSE_DIRS < <(
-    find "$ROOT_DIR" -type f \( -name docker-compose.yml -o -name compose.yml \) \
-        -exec dirname {} \; | sort -u
-)
-
-echo "🛑 Stopping containers..."
-for dir in "${COMPOSE_DIRS[@]}"; do
-    (cd "$dir" && docker compose down)
-done
-
-echo "📦 Backing up data (preserving exact permissions)..."
-rsync -a "$ROOT_DIR/" "$TEMP_DIR/"
-
-echo "🚀 Restarting containers..."
-for dir in "${COMPOSE_DIRS[@]}"; do
-    (cd "$dir" && docker compose up -d)
-done
-echo "✅ Backup complete!"
-```
-</details>
-
-2. **Layer 2: Local Sync (Hot Storage)**
-* **Tool:** Syncthing.
-* **Mechanism:** Real-time sync of the `dev`, `storage`, `backup`, and `mailbox` folders to a local client machine. Active database containers are explicitly excluded from this sync to prevent corruption, relying instead on the Layer 1 backups. The `mailbox` folder serves as a staging area for incoming files.
-
-3. **Layer 3: Cloud Encryption (Cold Storage)**
-* **Tool:** Filen (Zero-Knowledge).
-* **Mechanism:** The client machine automatically encrypts and uploads the synced folders (including the container backups) to the cloud.
-
-4. **Layer 4: Disaster Recovery**
-* **Time to Recovery:** Estimated 1-2 Hours.
-* **Process:** Flash OS -> Install Docker, Tailscale, RAM optimizations -> Pull Backup from Filen -> Run `docker-compose up -d`.
-
-## Getting Started
-
-Ready to deploy your own sovereign infrastructure? Check out the **[How-to-Use Guide](how-to-use.md)** for step-by-step instructions on cloning this repository, configuring your containers, and setting up automated backups.
-
-## Conclusion
-
-This architecture is inherently modular. While currently hosted on a Raspberry Pi 4, the Docker Compose definitions are hardware-agnostic. As the "Storage Cluster" grows (likely requiring RAID or ZFS in the future), the entire stack can be migrated to a generic x86 server or a NUC simply by copying the containers directory and the storage bind mounts. The integration of Filen as an encrypted offsite backup completes the enterprise-grade architecture, ensuring that "Sovereign" does not mean "Fragile."
 
 ---
 

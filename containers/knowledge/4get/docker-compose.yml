@@ -1,0 +1,16 @@
+# 4get: a private metasearch engine. It proxies results and images, so the
+# search engines never see your devices.
+services:
+  fourget:
+    image: ghcr.io/driftywinds/4get:latest
+    container_name: 4get
+    restart: unless-stopped
+    environment:
+      FOURGET_SERVER_NAME: search.${DOMAIN:?run ./install.sh}
+      FOURGET_PROTO: ${URL_SCHEME:-http}
+    ports:
+      - "9364:80"
+    volumes:
+      # Answer on any hostname, not only FOURGET_SERVER_NAME, so
+      # http://<tailscale-ip>:9364 works too.
+      - ./00-catchall.conf:/etc/apache2/conf.d/00-catchall.conf:ro

@@ -1,0 +1,33 @@
+# Pi-hole: DNS for your tailnet. Every <app>.<DOMAIN> name answers with this
+# machine's Tailscale IP, where nginx listens; every other name is forwarded
+# upstream, with ads and trackers blocked.
+#
+# One manual step, which install.sh prints with your values filled in:
+# Tailscale admin console → DNS → Add nameserver → Custom → <tailscale-ip>.
+# "Restrict to domain" = DOMAIN sends only your app names here (split DNS);
+# leaving it unrestricted and ticking "Override DNS servers" sends everything
+# here, which gives every device on your tailnet ad blocking.
+services:
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    restart: unless-stopped
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "8081:80/tcp"
+    environment:
+      TZ: ${TZ:?run ./install.sh}
+      FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD:?run ./install.sh}
+      # Tailnet queries reach Pi-hole through Docker's NAT, from addresses it
+      # doesn't consider local, so it has to answer every origin. The firewall
+      # (DOCKER-USER, set up by install.sh) is what keeps the LAN out.
+      FTLCONF_dns_listeningMode: all
+      # The wildcard record: <anything>.<DOMAIN> → this machine.
+      FTLCONF_misc_dnsmasq_lines: address=/${DOMAIN:?run ./install.sh}/${TS_IP:?run ./install.sh}
+    volumes:
+      - ./etc-pihole:/etc/pihole
+    cap_add:
+      - NET_ADMIN
+      - SYS_TIME
+      - SYS_NICE

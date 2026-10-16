@@ -1,0 +1,31 @@
+/* CryptPad server config, rendered by install.sh into config.js.
+ * Full reference: https://docs.cryptpad.org/en/admin_guide/customization.html
+ *
+ * Don't edit config.js itself: install.sh re-renders it on every run. Change
+ * this template, or .env for the admin keys.
+ */
+module.exports = {
+    httpUnsafeOrigin: '${URL_SCHEME}://workspace.${DOMAIN}',
+    httpSafeOrigin: '${URL_SCHEME}://workspacesb.${DOMAIN}',
+    httpAddress: '0.0.0.0',
+    httpPort: 3000,
+    websocketPort: 3003,
+
+    // CRYPTPAD_ADMIN_KEYS from .env, space-separated.
+    adminKeys: '${CRYPTPAD_ADMIN_KEYS}'.split(' ').filter(Boolean),
+
+    filePath: './datastore/',
+    archivePath: './data/archive',
+    pinPath: './data/pins',
+    taskPath: './data/tasks',
+    blockPath: './block',
+    blobPath: './blob',
+    blobStagingPath: './data/blobstage',
+    decreePath: './data/decrees',
+    logPath: './data/logs',
+    logToStdout: false,
+    logLevel: 'info',
+    logFeedback: false,
+    verbose: false,
+    installMethod: 'docker',
+};

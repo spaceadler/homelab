@@ -1,0 +1,22 @@
+# Nginx: the front door. Every app lives at http://<subdomain>.<DOMAIN>.
+# Pi-hole answers all of those names with this machine's Tailscale IP, and
+# nginx forwards each name to its app's port.
+#
+# The proxy config for each app sits next to the app as nginx.conf. install.sh
+# copies the ones for the apps you picked into ./sites and reloads nginx.
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    # Host networking: nginx reaches every app at 127.0.0.1:<port>, the same
+    # port you would type by hand. Port 80 is then guarded by ufw like any
+    # other host service: open on tailscale0, closed on the LAN.
+    network_mode: host
+    volumes:
+      # Replaces the image's default site. Rendered from homelab.conf.template.
+      - ./homelab.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./snippets:/etc/nginx/snippets:ro
+      - ./sites:/etc/nginx/sites:ro
+      # Your certificate, for HTTPS mode (docs/tls.md). Empty otherwise.
+      - ./letsencrypt:/etc/letsencrypt:ro

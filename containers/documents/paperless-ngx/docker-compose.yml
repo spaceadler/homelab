@@ -1,0 +1,48 @@
+# Paperless-ngx: scanned documents, OCR'd and searchable. Drop files into
+# storage/Inbox and they're imported, then filed under storage/Documents.
+#
+# Login: PAPERLESS_ADMIN_USER / PAPERLESS_ADMIN_PASSWORD from .env (created on
+# first start).
+services:
+  broker:
+    image: docker.io/library/redis:8
+    restart: unless-stopped
+    volumes:
+      - ./redisdata:/data
+
+  db:
+    image: docker.io/library/postgres:18
+    restart: unless-stopped
+    volumes:
+      - ./postgres:/var/lib/postgresql
+    environment:
+      POSTGRES_DB: paperless
+      POSTGRES_USER: paperless
+      POSTGRES_PASSWORD: ${PAPERLESS_DB_PASSWORD:?run ./install.sh}
+
+  webserver:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    restart: unless-stopped
+    depends_on:
+      - db
+      - broker
+    ports:
+      - "8302:8000"
+    volumes:
+      - ./data:/usr/src/paperless/data
+      - ${STORAGE_DIR:?run ./install.sh}/Documents:/usr/src/paperless/media
+      - ./export:/usr/src/paperless/export
+      - ${STORAGE_DIR:?run ./install.sh}/Inbox:/usr/src/paperless/consume
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_DBHOST: db
+      PAPERLESS_DBPASS: ${PAPERLESS_DB_PASSWORD:?run ./install.sh}
+      PAPERLESS_URL: ${URL_SCHEME:-http}://docs.${DOMAIN:?run ./install.sh}
+      PAPERLESS_TIME_ZONE: ${TZ:?run ./install.sh}
+      PAPERLESS_SECRET_KEY: ${PAPERLESS_SECRET_KEY:?run ./install.sh}
+      PAPERLESS_OCR_LANGUAGE: ${PAPERLESS_OCR_LANGUAGE:-eng}
+      PAPERLESS_OCR_LANGUAGES: ${PAPERLESS_OCR_LANGUAGES:-}
+      PAPERLESS_ADMIN_USER: ${PAPERLESS_ADMIN_USER:-admin}
+      PAPERLESS_ADMIN_PASSWORD: ${PAPERLESS_ADMIN_PASSWORD:?run ./install.sh}
+      USERMAP_UID: ${PUID:?run ./install.sh}
+      USERMAP_GID: ${PGID:?run ./install.sh}

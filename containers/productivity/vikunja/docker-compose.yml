@@ -1,0 +1,40 @@
+# Vikunja: tasks with lists, Kanban, Gantt and sub-tasks. Register the first
+# account in the web UI.
+services:
+  vikunja:
+    image: vikunja/vikunja:latest
+    restart: unless-stopped
+    environment:
+      VIKUNJA_SERVICE_PUBLICURL: ${URL_SCHEME:-http}://todo.${DOMAIN:?run ./install.sh}
+      VIKUNJA_SERVICE_JWTSECRET: ${VIKUNJA_JWT_SECRET:?run ./install.sh}
+      VIKUNJA_DATABASE_TYPE: postgres
+      VIKUNJA_DATABASE_HOST: db
+      VIKUNJA_DATABASE_USER: vikunja
+      VIKUNJA_DATABASE_DATABASE: vikunja
+      VIKUNJA_DATABASE_PASSWORD: ${VIKUNJA_DB_PASSWORD:?run ./install.sh}
+      TZ: ${TZ:?run ./install.sh}
+    ports:
+      - "3456:3456"
+    volumes:
+      - ./files:/app/vikunja/files
+      # Without a writable cache Vikunja logs "modcache" errors at startup.
+      - ./cache:/home/vikunja/.cache
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vikunja
+      POSTGRES_PASSWORD: ${VIKUNJA_DB_PASSWORD:?run ./install.sh}
+      POSTGRES_DB: vikunja
+      TZ: ${TZ:?run ./install.sh}
+    volumes:
+      - ./db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vikunja"]
+      interval: 5s
+      retries: 5
+      start_period: 10s

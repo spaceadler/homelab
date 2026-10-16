@@ -1,0 +1,29 @@
+# Nomie: track anything (mood, habits, sleep, coffee) with one tap. Nomie is
+# a browser app; it stores its data in CouchDB here so it syncs between your
+# devices. Nomie 6 isn't published as an image, so it's built from source
+# (see Dockerfile) on first install.
+#
+# In Nomie: Settings → Storage → CouchDB, server http://trackdb.<DOMAIN>,
+# user "admin", password NOMIE_COUCHDB_PASSWORD from .env.
+services:
+  nomie:
+    build: .
+    image: homelab/nomie:local
+    restart: unless-stopped
+    ports:
+      - "5005:80"
+    depends_on:
+      - couchdb
+
+  couchdb:
+    image: couchdb:3
+    restart: unless-stopped
+    ports:
+      - "5984:5984"
+    environment:
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: ${NOMIE_COUCHDB_PASSWORD:?run ./install.sh}
+    volumes:
+      - ./couchdb:/opt/couchdb/data
+      # Lets the Nomie page (track.<DOMAIN>) talk to CouchDB (trackdb.<DOMAIN>).
+      - ./cors.ini:/opt/couchdb/etc/local.d/cors.ini

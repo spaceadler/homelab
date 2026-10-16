@@ -1,0 +1,48 @@
+# Karakeep: bookmarks that archive the page itself (no link rot), with
+# full-text search. A headless Chrome fetches the pages; Meilisearch indexes
+# them. After creating your account, set DISABLE_SIGNUPS=true in .env.
+services:
+  web:
+    image: ghcr.io/karakeep-app/karakeep:${KARAKEEP_VERSION:-release}
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+    ports:
+      - "3786:3000"
+    # .env carries the secrets and the optional AI settings. Optional
+    # variables must be absent rather than empty, which env_file allows.
+    env_file:
+      - .env
+    environment:
+      MEILI_ADDR: http://meilisearch:7700
+      BROWSER_WEB_URL: http://chrome:9222
+      DATA_DIR: /data # don't change: the path inside the container
+      NEXTAUTH_URL: ${URL_SCHEME:-http}://bookmarks.${DOMAIN:?run ./install.sh}
+
+  chrome:
+    # Docker Hub copy of the image Karakeep's docs pull from gcr.io. gcr.io
+    # now refuses unauthenticated token requests for it ("requires billing"),
+    # which breaks pulls and update checkers like Cup.
+    image: zenika/alpine-chrome:124
+    restart: unless-stopped
+    command:
+      - --no-sandbox
+      - --disable-gpu
+      - --disable-dev-shm-usage
+      - --remote-debugging-address=0.0.0.0
+      - --remote-debugging-port=9222
+      - --hide-scrollbars
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.13.3
+    restart: unless-stopped
+    environment:
+      MEILI_NO_ANALYTICS: "true"
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?run ./install.sh}
+    volumes:
+      # The search index: rebuilt from ./data (Admin → Background jobs →
+      # reindex) if lost, so a Docker volume, kept out of the backups.
+      - meilisearch:/meili_data
+
+volumes:
+  meilisearch:

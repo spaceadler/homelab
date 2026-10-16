@@ -1,0 +1,15 @@
+# Radicale: calendars (CalDAV) and contacts (CardDAV) for your phone and
+# desktop. Account: RADICALE_USER / RADICALE_PASSWORD from .env; configure.sh
+# writes them, bcrypt-hashed, to ./data/users.
+#
+# iOS: Settings → Calendar → Accounts → Add → Other → CalDAV, server
+# cal.<DOMAIN>. Android: DAVx5 with http://cal.<DOMAIN>.
+services:
+  app:
+    image: cupcakearmy/radicale:1
+    container_name: radicale
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+    ports:
+      - "5222:5232"

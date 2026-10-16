@@ -1,0 +1,17 @@
+# Navidrome: streams storage/Media/Music to the browser and to any Subsonic
+# app (Symfonium, Feishin, Substreamer...). The first account is the admin.
+services:
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    restart: unless-stopped
+    user: ${PUID:?run ./install.sh}:${PGID:?run ./install.sh}
+    environment:
+      ND_SCANINTERVAL: 5m
+      ND_LOGLEVEL: info
+      ND_SESSIONTIMEOUT: 240h
+    volumes:
+      - ./data:/data
+      - ${STORAGE_DIR:?run ./install.sh}/Media/Music:/music:ro
+    ports:
+      - "4533:4533"
