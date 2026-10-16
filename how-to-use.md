@@ -145,9 +145,20 @@ sudo crontab -e
 0 4 * * * /home/<you>/homelab/scripts/backup.sh >/dev/null 2>&1
 ```
 
-Then get `storage/` and `backup/` off the machine. In this setup, Syncthing
-mirrors them to a second machine, which uploads them to an encrypted cloud
-(see [Backup & disaster recovery](README.md#backup--disaster-recovery)).
+Then get the files off the machine:
+
+1. **Main computer:** make a `~/homelab` folder there, and share
+   `storage/`, `backup/` and `mailbox/` into it with Syncthing (`dev/` too,
+   if you want your repos as local files as well as in Git).
+2. **Third device:** share just `mailbox/` (and `dev/`), so all three
+   devices share one drop zone.
+3. **Off-site:** upload from the main computer to an end-to-end encrypted
+   cloud (Filen, or Backblaze B2 behind `rclone crypt` or `restic`).
+
+That's 3-2-1 with no extra effort once it's set up. The why, and four
+tips that make it robust (file versioning, connecting over Tailscale,
+where secrets end up, pruning old backups), are in
+[Backup & disaster recovery](README.md#backup--disaster-recovery).
 
 ## 6. Living with it
 
