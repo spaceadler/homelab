@@ -1,18 +1,16 @@
-# adlerOS: the home screen at os.<DOMAIN> (the bare domain redirects here),
-# styled after umbrelOS: a wallpaper, a greeting, widgets, your apps on one
-# page per collection (an app that doesn't answer shows as Offline; apps in no
-# collection, like the ones you import, are under Extras), search (⌘K / Ctrl+K)
-# and a dock of your pinned apps plus the App Store, Settings and Live Usage.
-# The App Store installs, starts, stops, restarts and deletes apps, and
-# imports compose files you already have; Live Usage charts the machine and
-# each app's share. Behind a password: OS_PASSWORD in
-# .env. Right-click (or long-press) for menus; drag apps to rearrange them.
+# adlerOS, the home screen, at os.<DOMAIN> (the bare domain redirects here).
+# adlerOS has its own repository (https://git.spaceadler.com/spaceadler/adleros);
+# install.sh keeps a copy in ./adleros and runs it here in homelab mode: your
+# apps come from containers/catalog.tsv, one page per collection, and the
+# App Store installs and deletes them through install.sh. Its own README is
+# ./adleros/README.md. Behind a password: OS_PASSWORD in .env.
 #
 # Python's standard library and plain HTML/CSS/JS, nothing to build. It has no
 # Docker or root access: it runs as you, read-only, with no capabilities.
-# Settings that change the machine (homelab.env, backups, updates, restart)
-# are requests it queues in ./data/agent for the homelab helper on the host,
-# which runs only what scripts/agent/actions.json allows.
+# Anything that changes the machine is a request it queues in ./data/agent
+# for the helper on the host (adlerOS's agent.py, set up by install.sh),
+# which runs only what ./adleros/agent/actions.json and this homelab's
+# scripts/agent/actions.json allow.
 services:
   os:
     image: python:3.13-alpine
@@ -28,6 +26,7 @@ services:
     security_opt: [no-new-privileges:true]
     command: ["python", "-u", "/app/server.py"]
     environment:
+      ADLEROS_MODE: homelab
       OS_PASSWORD: ${OS_PASSWORD:?run ./install.sh}
       OS_SESSION_SECRET: ${OS_SESSION_SECRET:?run ./install.sh}
       OS_NAME: ${OS_NAME:-}
@@ -35,7 +34,10 @@ services:
       TZ: ${TZ:?run ./install.sh}
       PYTHONDONTWRITEBYTECODE: 1
     volumes:
-      - ./app:/app:ro
+      # adlerOS itself, fetched by install.sh from its own repository.
+      - ./adleros/app:/app:ro
+      - ./adleros/catalog:/adleros/catalog:ro
+      - ./adleros/agent:/adleros/agent:ro
       # App icons, fetched once from dashboard-icons and served from here, so
       # your browser never talks to a third party.
       - ./data:/data
@@ -52,7 +54,7 @@ services:
       # Read-only, for Settings: what the helper may do (it never runs
       # anything itself, only queues requests in ./data/agent), when the
       # last backup ran, and which OS this is.
-      - ../../../scripts/agent/actions.json:/homelab/actions.json:ro
+      - ../../../scripts/agent:/homelab/agent:ro
       - ../../../backup:/homelab/backup:ro
       - /etc/os-release:/host/os-release:ro
     healthcheck:

@@ -93,40 +93,24 @@ A request for `http://gallery.homelab.local` takes three hops:
 ([details](docs/tls.md)).
 
 **The home screen is the front door.** `http://homelab.local` (or
-`os.homelab.local`) opens **adlerOS**, which shows every installed app as an
-icon, one page per collection (the folders under `containers/`: Media,
-Knowledge, Life…). Apps that aren't in a collection, like the ones you
-import, are on the last page, **Extras**. An app that doesn't answer turns
-dim and says *Offline*. Its look follows umbrelOS's desktop: the greeting,
-the widgets, the paged grid, the magnifying dock. Unlike umbrelOS, it's one
-small app rather than a whole OS. It has no access to Docker; it runs as
-your user, read-only, with no capabilities, behind its own password.
+`os.homelab.local`) opens **[adlerOS](https://git.spaceadler.com/spaceadler/adleros)**, styled after umbrelOS:
+widgets, your apps as icons on one page per collection (the folders under
+`containers/`: Media, Knowledge, Life…; imported apps are on the last page,
+**Extras**), a dock of the apps you pin, **All apps**, search (⌘K or `/`),
+notifications, and an **App Store** that installs, starts, stops, updates and
+deletes apps and shows their logs. **Live Usage** charts the machine and
+every app's share; **Settings** changes the domain and timezone, backs up and
+updates the homelab. It all works from a keyboard alone (press `?`).
 
-- **Search:** the bar above the widgets searches the web (your 4get, if you
-  installed it); ⌘K / Ctrl+K searches your apps and settings.
-- **Widgets:** up to three, from right-click → **Edit widgets**: system
-  stats, storage, memory, CPU gauges, apps up and offline, last backup, a
-  clock. Each is described in
-  `containers/core/os/app/static/widgets-catalog.json`.
-- **Dock:** right-click an app (long-press on a phone) → **Keep in Dock**.
-  After your pinned apps come the **App Store**, **Settings** and **Live
-  Usage**, which stay; click one again to close its window.
-- **Live Usage:** CPU, memory, storage and temperature as they change, with
-  charts of the last three minutes, and which apps use the most CPU and
-  memory (from `docker stats`, through the helper). The System, Storage,
-  Memory and Processor widgets open it.
-- **Rearranging:** drag an app to a new place on its page, or a pinned app
-  along the dock. On a touch screen, long-press → **Rearrange apps**, drag,
-  then **Done**.
-- **Settings** opens the [settings window](#settings-and-the-helper); the
-  **App Store** manages your apps' containers ([below](#the-app-store)).
-
-To change the wallpaper, put any image in
-`containers/core/os/wallpaper/`. To use your own icons for the App Store,
-Settings or Live Usage, put `app-store`, `settings` or `live-usage`
-(`.svg`, `.png` or `.webp`) in `containers/core/os/icons/`. To have it greet
-you by name, set `OS_NAME` in `containers/core/os/.env`, or change it in
-Settings. After adding files, run `docker compose up -d` in that folder.
+adlerOS is its own project: `install.sh` fetches it into
+`containers/core/os/adleros/` and keeps it updated, so this repository only
+holds how the homelab runs it. Its docs: [the guide](https://git.spaceadler.com/spaceadler/adleros/src/branch/main/docs/guide.md),
+[keyboard](https://git.spaceadler.com/spaceadler/adleros/src/branch/main/docs/keyboard.md),
+[customizing](https://git.spaceadler.com/spaceadler/adleros/src/branch/main/docs/customizing.md) (wallpapers, dock
+icons, widgets, settings) and [security](https://git.spaceadler.com/spaceadler/adleros/src/branch/main/docs/security.md).
+It has no access to Docker; it runs as your user, read-only, with no
+capabilities, behind its own password (`OS_PASSWORD` in
+`containers/core/os/.env`).
 
 **Everything still works by port.** `http://<tailscale-ip>:2283` reaches
 Immich directly. The names are a convenience, not a dependency.
@@ -231,7 +215,8 @@ the apps themselves, are specific to your machine, and are never committed;
 ├── homelab.env             # (generated) domain, timezone, storage path, your app list
 ├── containers/
 │   ├── catalog.tsv         # every app: genre, address, port, description
-│   ├── core/               # nginx · pihole · vaultwarden · os (the home screen)
+│   ├── core/               # nginx · pihole · vaultwarden · os (the home screen,
+│   │                       #   adlerOS, fetched into core/os/adleros by install.sh)
 │   ├── system/             # glance · beszel · cup
 │   ├── media/              # immich · stremio · navidrome · audiobookshelf
 │   ├── knowledge/          # globnotes · memos · bookstack ·
@@ -256,10 +241,9 @@ the apps themselves, are specific to your machine, and are never committed;
 ├── scripts/
 │   ├── backup.sh           # Layer 1 backup (see below)
 │   ├── renew-certs.sh      # only for HTTPS with your own domain
-│   └── agent/              # the home screen's helper: what Settings may do
-│       ├── actions.json    #   the only actions it will run
-│       ├── homelab-agent.py
-│       └── apps.py         #   install, start, stop, delete and import apps
+│   └── agent/              # the home screen's helper (adlerOS's agent.py) here:
+│       ├── actions.json    #   this homelab's actions: apply settings, back up, update
+│       └── homelab-agent.{path,service}.template
 └── docs/
     └── tls.md              # HTTPS: Vaultwarden by default, every app optionally
 ```
@@ -339,45 +323,38 @@ read the changelogs first.
 
 ### Settings and the helper
 
-The home screen's **Settings** (the dock, ⌘K, or right-click → Change
-wallpaper) has:
+adlerOS's **Settings** has the homelab's own rows too:
 
-- **Account:** your name for the greeting, the home screen password, the
-  wallpaper, and the web search address. These apply at once.
 - **Homelab:** domain and timezone. Changing them shows an **Apply** bar;
   applying writes `homelab.env` and re-runs `install.sh` for you, with its
-  output shown live. The page also shows HTTPS, your Tailscale address and
-  the storage folder.
-- **System:** **Admin mode**, **Back up now** (runs `scripts/backup.sh`, and
-  shows the last backup's date), **Update homelab** (`git pull` +
-  `install.sh`, then a restart of adlerOS so it runs the new version),
-  **Restart** and **Shut down**, and what the machine is.
-- **The left column:** live storage, memory, CPU and temperature.
+  output shown live. Also shown: HTTPS, your Tailscale address and the
+  storage folder.
+- **System:** **Back up now** (runs `scripts/backup.sh`, and shows the last
+  backup's date) and **Update homelab** (`git pull` + `install.sh`, which
+  also updates adlerOS, then a restart of adlerOS so it runs the new
+  version), next to adlerOS's own: admin mode, restart, shut down.
 
-**Admin mode** is off until you switch it on, which asks for your password.
-Only while it's on can you restart or shut down the machine, delete apps in
-the App Store, or stop the core apps (Pi-hole, Vaultwarden). It's checked
-by adlerOS's server, not just hidden in the page, and it stays on (for every
-browser) until you switch it off.
-
-**How Settings changes things without being powerful.** The home screen
-itself has no Docker or root access. For anything beyond its own settings,
-it writes a request file into `containers/core/os/data/agent/queue/`, and
-that's all it can do. `install.sh` installs a small systemd service, the
-**helper** (`homelab-agent.path` and `.service`), which starts when a
-request appears. It runs as your user, never as root, and works through
-`scripts/agent/actions.json`. That file is the complete list of what it
-will do:
+**How the home screen changes things without being powerful.** adlerOS has
+no Docker or root access. For anything beyond its own settings it writes a
+request file into `containers/core/os/data/agent/queue/`, and that's all it
+can do. `install.sh` installs a small systemd service, the **helper**
+(`homelab-agent.path` and `.service`), which starts when a request appears.
+It runs adlerOS's `agent/agent.py` as your user, never as root, and does
+only what's listed in two files: adlerOS's
+`containers/core/os/adleros/agent/actions.json` (apps, restart, shut down)
+and this homelab's `scripts/agent/actions.json` (apply settings, back up,
+update).
 
 - Each action has a fixed list of steps.
 - Each parameter it accepts has a pattern the value must match. Anything
   else is refused.
 - Commands run without a shell, so a value can't sneak in a second
   command.
-- The two root-only steps (the backup, and restart/shut down) go through
-  `sudo` to root-owned copies of fixed scripts in
-  `/usr/local/libexec/homelab`. The rule in `/etc/sudoers.d/homelab` allows
-  exactly those three commands and nothing else.
+- The root-only steps go through `sudo` to root-owned copies of fixed
+  scripts: `/usr/local/libexec/homelab/backup` and
+  `/usr/local/libexec/adleros/power`. The rule in `/etc/sudoers.d/homelab`
+  allows exactly those three commands (backup, reboot, power off) and nothing
+  else.
 
 Even a compromised home screen could only ask for one of those actions.
 
@@ -386,71 +363,38 @@ Even a compromised home screen could only ask for one of those actions.
   Settings can still change your name, wallpaper and password, but its
   buttons wait for a helper that isn't there.
 
-**Adding a setting** is two small edits, without touching code:
-
-1. If it needs to change the machine, add an action to
-   `scripts/agent/actions.json`: a label, its params with a `pattern`, and
-   `steps`. A step runs a command (`{"run": [...]}`) or writes params into
-   `homelab.env` (`{"set-config": [...]}`).
-2. Add a row to `containers/core/os/app/static/settings-catalog.json`: its
-   category, icon, title, and a `control`. The types are `setting-text`,
-   `password`, `wallpaper`, `config`, `action` and `info`, all described at
-   the top of that file.
+**Adding a setting:** an action in `scripts/agent/actions.json` (if it needs
+to change the machine) and a row in adlerOS's settings catalog; see adlerOS's
+[customizing](https://git.spaceadler.com/spaceadler/adleros/src/branch/main/docs/customizing.md#settings-rows).
 
 ### The App Store
 
-The dock's **App Store** lists every app on your home screen by collection,
-with what its containers are doing: *Running*, *Partly running (1 of 2)*,
-*Stopped*, *Restarting*, or *No containers*. Under them, **Not installed**
-lists the catalog apps you haven't picked and the imported apps you
-deleted. Each installed app has:
+adlerOS's **App Store** works on this homelab's catalog. An app is *every*
+compose file in its folder and in the folders right inside it, so an app made
+of several containers (Immich, Maybe) or several compose files (Beszel and
+its agent) starts and stops as one, each file from its own folder, exactly as
+if you'd typed `docker compose` there. Here:
 
-- **Start:** runs the app's `pre-start.sh` if it has one (Kiwix waits for
-  an archive, Vaultwarden for a MagicDNS name), then `docker compose up -d`.
-- **Stop:** `docker compose stop`. The containers stay, ready to start.
-- **Restart:** `docker compose restart` (or a start, if it has no
-  containers).
-- **Delete:** `docker compose down`, and the app leaves your home screen.
-  A catalog app is taken out of `APPS` in `homelab.env` and `install.sh`
-  re-runs, so its address and dashboard entry go too. Its data folders,
-  volumes and compose files stay, so **Install** brings it back exactly as
-  it was. Delete needs [admin mode](#settings-and-the-helper); core apps
-  (Pi-hole, Vaultwarden) can't be deleted at all, and stopping them also
-  needs admin mode.
+- **Install** (under **Not installed**: the catalog apps you haven't picked)
+  adds the app to `APPS` in `homelab.env` and re-runs `install.sh`, which sets
+  it up (passwords, nginx route, dashboard entry) and starts it, as if you'd
+  ticked it in the menu.
+- **Delete** stops and removes its containers, takes it out of `APPS`, and
+  re-runs `install.sh`, so its address and dashboard entry go too. Its data
+  and compose files stay, so **Install** brings it back exactly as it was.
+  It needs admin mode; core apps (Pi-hole, Vaultwarden) can't be deleted, and
+  stopping them needs admin mode too.
+- **Start** runs the app's `pre-start.sh` first, like `install.sh` does (Kiwix
+  waits for an archive, Vaultwarden for a MagicDNS name).
+- adlerOS itself and nginx aren't on the list, since stopping either would
+  take the App Store down with it.
 
-And each app under **Not installed** has **Install**: a catalog app goes
-into `APPS` and `install.sh` sets it up (passwords, address, dashboard
-entry) and starts it, as if you'd ticked it in the menu; an imported app
-starts again. Installing or deleting a catalog app takes a minute or two;
-**Details** on its card shows `install.sh` working.
-
-An app is *every* compose file in its folder and in the folders right
-inside it, so an app made of several containers (Immich, Maybe) or several
-compose files (Beszel and its agent) starts and stops as one. Each file runs
-from its own folder, exactly as if you'd typed `docker compose` there.
-adlerOS itself and nginx aren't on the list, since stopping either would
-take the App Store down with it.
-
-**Importing apps you already run.** **Import apps…** asks for a folder
-(under your home folder) and lists the compose files in it and two levels
-below. Pick the ones to bring in, then go through them one at a time, *File
-2 of 5*. Next to the compose file, tick each service that is an app of its
-own, the one with a web page you open, and give it a name, an address (it
-suggests `http://<tailscale-ip>:<port>`) and an icon. One file can hold
-several apps (Immich and Navidrome in one compose file, say): tick both.
-Every other service (a database, a cache) belongs to one of them, guessed
-from `depends_on`, and starts, stops and is deleted with that app only.
-
-Each becomes an app in **Extras**, managed like the rest. Nothing is copied
-or moved: the record is `containers/extras/<app>/app.json`, pointing at your
-file and naming its services, and **Remove** takes it out of adlerOS without
-touching its containers or files. Their data lives wherever their compose
-files keep it, so `scripts/backup.sh` doesn't copy it.
-
-**Adding a widget** is one entry in
-`containers/core/os/app/static/widgets-catalog.json`: a type (`four-stats`,
-`three-stats`, `progress`, `gauges`, `list`, `text-button`, `clock`) and the
-named values it shows, from `VALUES` in `widgets.js`.
+**Importing apps you already run** (*Import apps…*) works as in
+[adlerOS's guide](https://git.spaceadler.com/spaceadler/adleros/src/branch/main/docs/guide.md#importing-apps-adleros-didnt-find).
+Imported apps are recorded in `containers/extras/<app>/app.json`, pointing at
+your compose file; a known app (Jellyfin, say) goes in its collection, the
+rest in **Extras**. Their data lives wherever their compose files keep it, so
+`scripts/backup.sh` doesn't copy it.
 
 ## First logins
 
@@ -736,19 +680,9 @@ The Pi-specific preparation (USB boot, zram and swap) is in the
 
 ## Credits
 
-- **Home screen design:** modelled on the umbrelOS desktop by
-  [Umbrel](https://umbrel.com). Its layout, sizes and behaviour were studied
-  from umbrelOS's public source, and reimplemented here in plain HTML, CSS
-  and JS. No umbrelOS code or artwork is included.
-- **Dock icons:** the App Store, Settings and Live Usage icons were drawn
-  for this repository (`containers/core/os/app/static/dock/`). The App
-  Store one is its own design, not Apple's.
-- **Font:** [Inter](https://rsms.me/inter/) by Rasmus Andersson, under the
-  SIL Open Font License (`containers/core/os/app/static/fonts/OFL.txt`).
-- **Wallpapers:** NASA photographs from the International Space Station and
-  the Space Shuttle, which are in the public domain: the aurora
-  (`iss072e159172`) and a sunrise over Earth's limb (`STS052-23-022`), from
-  [images.nasa.gov](https://images.nasa.gov).
+- **Home screen:** [adlerOS](https://git.spaceadler.com/spaceadler/adleros), which credits its design (after
+  umbrelOS, reimplemented, no umbrelOS code or artwork), its font (Inter,
+  SIL OFL) and its wallpapers (NASA, public domain).
 - **App icons:** fetched at runtime from
   [dashboard-icons](https://github.com/homarr-labs/dashboard-icons). Each
   icon belongs to its app's project.
