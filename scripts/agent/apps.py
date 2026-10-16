@@ -5,7 +5,8 @@ The homelab helper runs it for the App Store (see actions.json), as your user:
 
     apps.py status                       every app's containers, as JSON
     apps.py usage                        each app's CPU and memory now, as JSON
-    apps.py start|stop|restart|delete|install APP
+    apps.py logs APP                     an app's recent logs, as JSON
+    apps.py start|stop|restart|update|delete|install APP
     apps.py scan PATH                    compose files at PATH, as JSON
     apps.py import NAME FILE SERVICES URL ICON PORT
     apps.py forget APP                   un-import (containers untouched)
@@ -22,6 +23,8 @@ from its own folder, exactly as if you ran it there yourself.
              "not yet": Kiwix with no archives, say), then `up -d`
     stop     `stop`: the containers stay, ready to start again
     restart  `restart`, or a start if it has no containers
+    update   `pull`, then `up -d`: new images, and the containers recreated
+             on them; data stays
     delete   `down`, and the app leaves the home screen: a catalog app is
              taken out of APPS and install.sh re-run (so its address and
              dashboard entry go too); an imported one is marked not
@@ -67,6 +70,8 @@ SCAN_MAX_FILES = 100
 SHOW_BYTES = 32 * 1024  # compose text shown per file
 SHOW_TOTAL = 700 * 1024
 SKIP_DIRS = {"node_modules", ".git", "__pycache__", "venv", ".venv"}
+LOG_LINES = 300  # per compose file
+LOG_BYTES = 400 * 1024
 
 
 def say(message):
@@ -233,7 +238,7 @@ def containers():
     """Every container on the machine: (name, state, status, compose folder, service)."""
     fmt = "\t".join(["{{.Names}}", "{{.State}}", "{{.Status}}",
                      '{{.Label "com.docker.compose.project.working_dir"}}',
-                     '{{.Label "com.docker.compose.service"}}'])
+                     '{{.Label "com.docker.compose.service"}}', "{{.Image}}"])
     result = subprocess.run(["docker", "ps", "-a", "--no-trunc", "--format", fmt], env=docker_env(),
                             stdin=subprocess.DEVNULL, capture_output=True, text=True, check=False)
     if result.returncode != 0:
@@ -241,8 +246,8 @@ def containers():
     rows = []
     for line in result.stdout.splitlines():
         parts = line.split("\t")
-        if len(parts) == 5:
-            rows.append(dict(zip(("name", "state", "status", "folder", "service"), parts)))
+        if len(parts) == 6:
+            rows.append(dict(zip(("name", "state", "status", "folder", "service", "image"), parts)))
     return rows
 
 
@@ -273,7 +278,7 @@ def app_status(apps):
             found += [c for c in by_folder.get(os.path.realpath(f.parent), [])
                       if app["services"] is None or c["service"] in app["services"]]
         report[app_id] = {"state": summarize(found, app["files"]), "files": len(app["files"]),
-                          "containers": [{k: c[k] for k in ("name", "service", "state", "status")} for c in found]}
+                          "containers": [{k: c[k] for k in ("name", "service", "state", "status", "image")} for c in found]}
     return report
 
 
@@ -362,6 +367,33 @@ def restart(app):
     return first_failure(compose(f, *scoped(app, "restart")) for f in app["files"])
 
 
+def update(app):
+    """New images, then the containers recreated on them (only those that changed)."""
+    code = first_failure(compose(f, *scoped(app, "pull")) for f in app["files"])
+    if code:
+        say(f"Pulling didn't finish ({code}); {app['name']} keeps running as it was.")
+        return code
+    return start(app)
+
+
+def logs(app):
+    """The last LOG_LINES lines of each compose file's containers, oldest first."""
+    lines = []
+    for f in app["files"]:
+        result = subprocess.run(["docker", "compose", "-f", str(f), *scoped(app, "logs", "--no-color", "--timestamps",
+                                                                            "--tail", str(LOG_LINES))],
+                                cwd=f.parent, env=docker_env(), stdin=subprocess.DEVNULL, capture_output=True,
+                                text=True, errors="replace", timeout=60, check=False)
+        lines += (result.stdout + result.stderr).splitlines()
+    # Compose interleaves containers; sort by the timestamp after the "name | ".
+    stamp = re.compile(r"^\S+\s+\|\s+(\S+)")
+    lines.sort(key=lambda l: (m.group(1) if (m := stamp.match(l)) else ""))
+    text = "\n".join(lines)
+    if len(text) > LOG_BYTES:
+        text = text[-LOG_BYTES:].split("\n", 1)[-1]
+    return {"app": app["id"], "lines": text.splitlines()}
+
+
 def remove_containers(app):
     if app["services"] is None:
         return first_failure(compose(f, "down") for f in reversed(app["files"]))
@@ -426,7 +458,7 @@ def first_failure(codes):
     return failed
 
 
-COMMANDS = {"start": start, "stop": stop, "restart": restart, "delete": delete, "install": install}
+COMMANDS = {"start": start, "stop": stop, "restart": restart, "update": update, "delete": delete, "install": install}
 
 
 # ---------------------------------------------------------------- import
@@ -606,6 +638,16 @@ def main(argv):
         except (OSError, RuntimeError, subprocess.TimeoutExpired) as e:
             print(json.dumps({"error": f"can't read Docker: {e}", "apps": {}}))
         return 0
+    if len(argv) == 2 and argv[0] == "logs" and APP_ID.fullmatch(argv[1]):
+        app = all_apps().get(argv[1])
+        if not app:
+            print(json.dumps({"error": f"{argv[1]} isn't an installed app", "lines": []}))
+            return 0
+        try:
+            print(json.dumps(logs(app)))
+        except (OSError, subprocess.TimeoutExpired) as e:
+            print(json.dumps({"error": f"can't read the logs: {e}", "lines": []}))
+        return 0
     if len(argv) == 1 and argv[0] == "status":
         try:
             report = app_status(all_apps())
@@ -615,7 +657,7 @@ def main(argv):
         print(json.dumps({"apps": report}))
         return 0
     if len(argv) != 2 or argv[0] not in COMMANDS or not APP_ID.fullmatch(argv[1]):
-        sys.exit(f"usage: apps.py status | usage | {{{'|'.join(COMMANDS)}}} APP | scan PATH | forget APP"
+        sys.exit(f"usage: apps.py status | usage | logs APP | {{{'|'.join(COMMANDS)}}} APP | scan PATH | forget APP"
                  " | import NAME FILE SERVICES URL ICON PORT")
     app = every_app().get(argv[1])
     if not app:

@@ -34,6 +34,7 @@ function toggleUsage() {
 function openUsage() {
   closeSearch();
   closeMenu();
+  closeDrawer();
   if (isOpen("settings")) closeSettings();
   if (isOpen("store")) closeStore();
   const sheet = $("usage");

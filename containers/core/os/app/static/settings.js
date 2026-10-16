@@ -83,6 +83,7 @@ async function loadCatalog() {
 async function openSettings(rowId) {
   closeSearch();
   closeMenu();
+  closeDrawer();
   await loadCatalog();
   const sheet = $("settings");
   sheet.classList.remove("closing");
