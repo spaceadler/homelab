@@ -10,6 +10,13 @@
 # would intercept, so it's switched off.
 set -euo pipefail
 
+# Run by the home screen's helper (no terminal, no general sudo): whatever
+# tailscale serve was set to the last time you ran ./install.sh still holds.
+if [ ! -t 0 ] && ! sudo -n true 2>/dev/null; then
+    echo "  tailscale serve left as it is (changing it needs ./install.sh in a terminal)"
+    exit 0
+fi
+
 serving() { sudo tailscale serve status 2>/dev/null | grep -q '127.0.0.1:4345'; }
 
 if [ "$URL_SCHEME" = https ]; then

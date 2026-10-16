@@ -17,6 +17,7 @@
 !/containers/*/*/Dockerfile
 # ...and the static config a few apps ship with.
 !/containers/core/nginx/snippets/
+!/containers/core/os/app/
 /containers/core/nginx/snippets/listen.conf
 !/containers/knowledge/4get/00-catchall.conf
 !/containers/productivity/super-productivity/proxy-nginx.conf
@@ -39,3 +40,6 @@
 !/dev/.gitkeep
 /mailbox/**
 !/mailbox/.gitkeep
+
+# Python bytecode (e.g. from linting server.py on the host).
+__pycache__/

@@ -18,11 +18,11 @@ server {
     return 444;
 }
 
-# The bare domain: go to the start page.
+# The bare domain: go to the home screen.
 server {
     include snippets/listen.conf;
     server_name ${DOMAIN};
-    return 302 ${URL_SCHEME}://home.${DOMAIN}$request_uri;
+    return 302 ${URL_SCHEME}://os.${DOMAIN}$request_uri;
 }
 
 include /etc/nginx/sites/*.conf;

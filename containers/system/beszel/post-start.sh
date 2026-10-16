@@ -4,17 +4,18 @@
 # derives from it.
 set -euo pipefail
 
+# Only the first time: once agent/.env has the key, there's nothing to wait
+# for (and no sudo needed, so the home screen's helper can re-run this too).
 key=beszel_data/id_ed25519
-for _ in $(seq 60); do
-    sudo test -f "$key" && break
-    sleep 1
-done
-if ! sudo test -f "$key"; then
-    echo "  ! The Beszel hub hasn't written $key yet; re-run ./install.sh in a minute."
-    exit 0
-fi
-
 if [ ! -s agent/.env ]; then
+    for _ in $(seq 60); do
+        sudo test -f "$key" && break
+        sleep 1
+    done
+    if ! sudo test -f "$key"; then
+        echo "  ! The Beszel hub hasn't written $key yet; re-run ./install.sh in a minute."
+        exit 0
+    fi
     printf 'BESZEL_AGENT_KEY="%s"\n' "$(sudo ssh-keygen -y -f "$key")" > agent/.env
     chmod 600 agent/.env
 fi

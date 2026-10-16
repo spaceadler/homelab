@@ -22,7 +22,11 @@ cd ~/homelab && ./install.sh
 ```
 
 `install.sh` installs Docker and Tailscale, locks the firewall, asks which
-apps you want, generates every password, and starts them. It's safe to run
+apps you want, generates every password, and starts them. Afterwards,
+`http://homelab.local` opens your **home screen**, adlerOS, styled after
+umbrelOS: your apps as icons over a wallpaper, one page per collection,
+with widgets, search, a dock and an App Store, behind a password. It's safe
+to run
 again whenever you like: that's also how you add apps and apply updates. The
 **[How-to-Use Guide](how-to-use.md)** walks through a first install step by
 step.
@@ -32,6 +36,8 @@ step.
 2. [The apps and their addresses](#the-apps-and-their-addresses)
 3. [Directory structure](#directory-structure)
 4. [Operating it](#operating-it)
+   - [Settings and the helper](#settings-and-the-helper)
+   - [The App Store](#the-app-store)
 5. [First logins](#first-logins)
 6. [Security model](#security-model)
 7. [HTTPS](#https)
@@ -39,6 +45,7 @@ step.
 9. [Adding an app](#adding-an-app)
 10. [Hardware](#hardware)
 11. [Screenshots](#screenshots)
+12. [Credits](#credits)
 
 ## How it works
 
@@ -85,6 +92,42 @@ A request for `http://gallery.homelab.local` takes three hops:
 `tailscale serve` gives it a real certificate on this machine's tailnet name
 ([details](docs/tls.md)).
 
+**The home screen is the front door.** `http://homelab.local` (or
+`os.homelab.local`) opens **adlerOS**, which shows every installed app as an
+icon, one page per collection (the folders under `containers/`: Media,
+Knowledge, Life…). Apps that aren't in a collection, like the ones you
+import, are on the last page, **Extras**. An app that doesn't answer turns
+dim and says *Offline*. Its look follows umbrelOS's desktop: the greeting,
+the widgets, the paged grid, the magnifying dock. Unlike umbrelOS, it's one
+small app rather than a whole OS. It has no access to Docker; it runs as
+your user, read-only, with no capabilities, behind its own password.
+
+- **Search:** the bar above the widgets searches the web (your 4get, if you
+  installed it); ⌘K / Ctrl+K searches your apps and settings.
+- **Widgets:** up to three, from right-click → **Edit widgets**: system
+  stats, storage, memory, CPU gauges, apps up and offline, last backup, a
+  clock. Each is described in
+  `containers/core/os/app/static/widgets-catalog.json`.
+- **Dock:** right-click an app (long-press on a phone) → **Keep in Dock**.
+  After your pinned apps come the **App Store**, **Settings** and **Live
+  Usage**, which stay; click one again to close its window.
+- **Live Usage:** CPU, memory, storage and temperature as they change, with
+  charts of the last three minutes, and which apps use the most CPU and
+  memory (from `docker stats`, through the helper). The System, Storage,
+  Memory and Processor widgets open it.
+- **Rearranging:** drag an app to a new place on its page, or a pinned app
+  along the dock. On a touch screen, long-press → **Rearrange apps**, drag,
+  then **Done**.
+- **Settings** opens the [settings window](#settings-and-the-helper); the
+  **App Store** manages your apps' containers ([below](#the-app-store)).
+
+To change the wallpaper, put any image in
+`containers/core/os/wallpaper/`. To use your own icons for the App Store,
+Settings or Live Usage, put `app-store`, `settings` or `live-usage`
+(`.svg`, `.png` or `.webp`) in `containers/core/os/icons/`. To have it greet
+you by name, set `OS_NAME` in `containers/core/os/.env`, or change it in
+Settings. After adding files, run `docker compose up -d` in that folder.
+
 **Everything still works by port.** `http://<tailscale-ip>:2283` reaches
 Immich directly. The names are a convenience, not a dependency.
 
@@ -109,51 +152,35 @@ installer reads.
 | Nginx | Reverse proxy: turns `<app>.<domain>` into the right port | - | 80 |
 | Pi-hole | DNS for `<app>.<domain>`, plus ad blocking | `http://dns.homelab.local` | 8081 |
 | Vaultwarden | Password manager | `https://<machine>.<tailnet>.ts.net` (`vault.homelab.local` redirects) | 4345 (this machine only) |
+| adlerOS | Home screen with every app you installed, behind a password | `http://os.homelab.local` (and `http://homelab.local`) | 8686 |
 
 #### System
 
 | App | What it's for | Address | Port |
 | --- | --- | --- | --- |
-| Glance | Start page and dashboard of every app | `http://home.homelab.local` | 8080 |
+| Glance | Dashboard of widgets: feeds, calendar, containers | `http://home.homelab.local` | 8080 |
 | Beszel | CPU, RAM, disk and container monitoring | `http://stats.homelab.local` | 8042 |
 | Cup | Shows which container images have updates | `http://cup.homelab.local` | 9898 |
 
-#### Photos & video
+#### Media
 
 | App | What it's for | Address | Port |
 | --- | --- | --- | --- |
 | Immich | Photos and videos, with phone backup | `http://gallery.homelab.local` | 2283 |
 | Stremio | Streaming server for the Stremio apps | `http://watch.homelab.local` | 5543 |
-
-#### Audio
-
-| App | What it's for | Address | Port |
-| --- | --- | --- | --- |
 | Navidrome | Music streaming (Subsonic apps work too) | `http://music.homelab.local` | 4533 |
 | Audiobookshelf | Audiobooks, podcasts and e-books | `http://audiobook.homelab.local` | 13378 |
 
-#### Notes
+#### Knowledge
 
 | App | What it's for | Address | Port |
 | --- | --- | --- | --- |
 | Globnotes | Markdown notes in storage/Notes (Obsidian-compatible) | `http://notes.homelab.local` | 8487 |
 | Memos | Quick thoughts, Twitter-style | `http://memos.homelab.local` | 5230 |
 | BookStack | Wiki: shelves, books, chapters, pages | `http://books.homelab.local` | 6875 |
-
-#### Knowledge
-
-| App | What it's for | Address | Port |
-| --- | --- | --- | --- |
 | Karakeep | Bookmarks that archive the page itself | `http://bookmarks.homelab.local` | 3786 |
 | Kiwix | Offline Wikipedia and other .zim archives | `http://wiki.homelab.local` | 8092 |
 | 4get | Private metasearch engine | `http://search.homelab.local` | 9364 |
-
-#### Documents
-
-| App | What it's for | Address | Port |
-| --- | --- | --- | --- |
-| Paperless-ngx | Scanned documents with OCR and search | `http://docs.homelab.local` | 8302 |
-| CryptPad | End-to-end encrypted office suite (needs [HTTPS](docs/tls.md)) | `http://workspace.homelab.local` | 7000 |
 
 #### Productivity
 
@@ -162,26 +189,18 @@ installer reads.
 | Vikunja | Tasks, Kanban, Gantt | `http://todo.homelab.local` | 3456 |
 | Super Productivity | Time blocking and planning, synced over WebDAV | `http://schedule.homelab.local` | 5432 |
 | Radicale | Calendar and contacts (CalDAV/CardDAV) | `http://cal.homelab.local` | 5222 |
+| Paperless-ngx | Scanned documents with OCR and search | `http://docs.homelab.local` | 8302 |
+| CryptPad | End-to-end encrypted office suite (needs [HTTPS](docs/tls.md)) | `http://workspace.homelab.local` | 7000 |
+| Nomie | Life and mood tracking | `http://track.homelab.local` | 5005 |
 
-#### Travel
+#### Life
 
 | App | What it's for | Address | Port |
 | --- | --- | --- | --- |
 | Dawarich | Location history (Google Timeline replacement) | `http://timeline.homelab.local` | 3001 |
 | TREK | Trip planner | `http://trips.homelab.local` | 3210 |
 | AirTrail | Flight log | `http://fly.homelab.local` | 9478 |
-
-#### Trackers
-
-| App | What it's for | Address | Port |
-| --- | --- | --- | --- |
 | Yamtrack | Movies, shows, anime, books and games you've watched/read/played | `http://catalogue.homelab.local` | 2143 |
-| Nomie | Life and mood tracking | `http://track.homelab.local` | 5005 |
-
-#### Finance
-
-| App | What it's for | Address | Port |
-| --- | --- | --- | --- |
 | Ghostfolio | Investment portfolio and net worth | `http://assets.homelab.local` | 3333 |
 | Maybe | Budgeting and expenses | `http://budget.homelab.local` | 13400 |
 
@@ -212,18 +231,17 @@ the apps themselves, are specific to your machine, and are never committed;
 ├── homelab.env             # (generated) domain, timezone, storage path, your app list
 ├── containers/
 │   ├── catalog.tsv         # every app: genre, address, port, description
-│   ├── core/               # nginx · pihole · vaultwarden
+│   ├── core/               # nginx · pihole · vaultwarden · os (the home screen)
 │   ├── system/             # glance · beszel · cup
-│   ├── photos-video/       # immich · stremio
-│   ├── audio/              # navidrome · audiobookshelf
-│   ├── notes/              # globnotes · memos · bookstack
-│   ├── knowledge/          # karakeep · kiwix · 4get
-│   ├── documents/          # paperless-ngx · cryptpad
-│   ├── productivity/       # vikunja · super-productivity · radicale
-│   ├── travel/             # dawarich · trek · airtrail
-│   ├── trackers/           # yamtrack · nomie
-│   ├── finance/            # ghostfolio · maybe
-│   └── files/              # syncthing · filebrowser · gitea · qbittorrent
+│   ├── media/              # immich · stremio · navidrome · audiobookshelf
+│   ├── knowledge/          # globnotes · memos · bookstack ·
+│   │                       #   karakeep · kiwix · 4get
+│   ├── productivity/       # vikunja · super-productivity · radicale ·
+│   │                       #   paperless-ngx · cryptpad · nomie
+│   ├── life/               # dawarich · trek · airtrail · yamtrack ·
+│   │                       #   ghostfolio · maybe
+│   ├── files/              # syncthing · filebrowser · gitea · qbittorrent
+│   └── extras/             # (generated) apps you imported in the App Store
 ├── storage/                # your files, as plain folders (or STORAGE_DIR elsewhere)
 │   ├── Documents/          #   Paperless-ngx archive
 │   ├── Downloads/          #   qBittorrent
@@ -237,7 +255,11 @@ the apps themselves, are specific to your machine, and are never committed;
 ├── mailbox/                # inbox for files you haven't sorted yet
 ├── scripts/
 │   ├── backup.sh           # Layer 1 backup (see below)
-│   └── renew-certs.sh      # only for HTTPS with your own domain
+│   ├── renew-certs.sh      # only for HTTPS with your own domain
+│   └── agent/              # the home screen's helper: what Settings may do
+│       ├── actions.json    #   the only actions it will run
+│       ├── homelab-agent.py
+│       └── apps.py         #   install, start, stop, delete and import apps
 └── docs/
     └── tls.md              # HTTPS: Vaultwarden by default, every app optionally
 ```
@@ -248,7 +270,7 @@ If everything else breaks, plug the disk into any computer and copy
 
 ### Inside an app folder
 
-Every app follows the same shape. `containers/photos-video/immich/`, for
+Every app follows the same shape. `containers/media/immich/`, for
 example:
 
 ```text
@@ -277,10 +299,11 @@ Everyday commands, all run from `~/homelab`:
 
 | To… | Run |
 | --- | --- |
-| Add or remove apps | `./install.sh`, then tick or untick in the menu |
+| Add or remove apps | the App Store's **Install** and **Delete**, or `./install.sh` and tick or untick in the menu |
 | Apply a change to `homelab.env` (domain, timezone, storage path) | `./install.sh` |
 | Update this repo | `git pull && ./install.sh` |
-| See what's running | `docker ps`, or the Glance and Beszel dashboards |
+| See what's running | the App Store in adlerOS, Beszel, or `docker ps` |
+| Start, stop, restart or delete an app | the App Store, or `docker compose` in its folder |
 | Read an app's logs | `cd containers/<genre>/<app> && docker compose logs -f` |
 | Restart an app | `cd containers/<genre>/<app> && docker compose restart` |
 | Change one app's settings | edit its `.env`, then `docker compose up -d` in its folder |
@@ -314,6 +337,121 @@ read the changelogs first.
   that's already set up. **`--no-start`** writes the config without
   starting anything.
 
+### Settings and the helper
+
+The home screen's **Settings** (the dock, ⌘K, or right-click → Change
+wallpaper) has:
+
+- **Account:** your name for the greeting, the home screen password, the
+  wallpaper, and the web search address. These apply at once.
+- **Homelab:** domain and timezone. Changing them shows an **Apply** bar;
+  applying writes `homelab.env` and re-runs `install.sh` for you, with its
+  output shown live. The page also shows HTTPS, your Tailscale address and
+  the storage folder.
+- **System:** **Admin mode**, **Back up now** (runs `scripts/backup.sh`, and
+  shows the last backup's date), **Update homelab** (`git pull` +
+  `install.sh`, then a restart of adlerOS so it runs the new version),
+  **Restart** and **Shut down**, and what the machine is.
+- **The left column:** live storage, memory, CPU and temperature.
+
+**Admin mode** is off until you switch it on, which asks for your password.
+Only while it's on can you restart or shut down the machine, delete apps in
+the App Store, or stop the core apps (Pi-hole, Vaultwarden). It's checked
+by adlerOS's server, not just hidden in the page, and it stays on (for every
+browser) until you switch it off.
+
+**How Settings changes things without being powerful.** The home screen
+itself has no Docker or root access. For anything beyond its own settings,
+it writes a request file into `containers/core/os/data/agent/queue/`, and
+that's all it can do. `install.sh` installs a small systemd service, the
+**helper** (`homelab-agent.path` and `.service`), which starts when a
+request appears. It runs as your user, never as root, and works through
+`scripts/agent/actions.json`. That file is the complete list of what it
+will do:
+
+- Each action has a fixed list of steps.
+- Each parameter it accepts has a pattern the value must match. Anything
+  else is refused.
+- Commands run without a shell, so a value can't sneak in a second
+  command.
+- The two root-only steps (the backup, and restart/shut down) go through
+  `sudo` to root-owned copies of fixed scripts in
+  `/usr/local/libexec/homelab`. The rule in `/etc/sudoers.d/homelab` allows
+  exactly those three commands and nothing else.
+
+Even a compromised home screen could only ask for one of those actions.
+
+- **What it's doing:** `journalctl -u homelab-agent`.
+- **Not set up:** run `./install.sh` without `--no-host`. With `--no-host`,
+  Settings can still change your name, wallpaper and password, but its
+  buttons wait for a helper that isn't there.
+
+**Adding a setting** is two small edits, without touching code:
+
+1. If it needs to change the machine, add an action to
+   `scripts/agent/actions.json`: a label, its params with a `pattern`, and
+   `steps`. A step runs a command (`{"run": [...]}`) or writes params into
+   `homelab.env` (`{"set-config": [...]}`).
+2. Add a row to `containers/core/os/app/static/settings-catalog.json`: its
+   category, icon, title, and a `control`. The types are `setting-text`,
+   `password`, `wallpaper`, `config`, `action` and `info`, all described at
+   the top of that file.
+
+### The App Store
+
+The dock's **App Store** lists every app on your home screen by collection,
+with what its containers are doing: *Running*, *Partly running (1 of 2)*,
+*Stopped*, *Restarting*, or *No containers*. Under them, **Not installed**
+lists the catalog apps you haven't picked and the imported apps you
+deleted. Each installed app has:
+
+- **Start:** runs the app's `pre-start.sh` if it has one (Kiwix waits for
+  an archive, Vaultwarden for a MagicDNS name), then `docker compose up -d`.
+- **Stop:** `docker compose stop`. The containers stay, ready to start.
+- **Restart:** `docker compose restart` (or a start, if it has no
+  containers).
+- **Delete:** `docker compose down`, and the app leaves your home screen.
+  A catalog app is taken out of `APPS` in `homelab.env` and `install.sh`
+  re-runs, so its address and dashboard entry go too. Its data folders,
+  volumes and compose files stay, so **Install** brings it back exactly as
+  it was. Delete needs [admin mode](#settings-and-the-helper); core apps
+  (Pi-hole, Vaultwarden) can't be deleted at all, and stopping them also
+  needs admin mode.
+
+And each app under **Not installed** has **Install**: a catalog app goes
+into `APPS` and `install.sh` sets it up (passwords, address, dashboard
+entry) and starts it, as if you'd ticked it in the menu; an imported app
+starts again. Installing or deleting a catalog app takes a minute or two;
+**Details** on its card shows `install.sh` working.
+
+An app is *every* compose file in its folder and in the folders right
+inside it, so an app made of several containers (Immich, Maybe) or several
+compose files (Beszel and its agent) starts and stops as one. Each file runs
+from its own folder, exactly as if you'd typed `docker compose` there.
+adlerOS itself and nginx aren't on the list, since stopping either would
+take the App Store down with it.
+
+**Importing apps you already run.** **Import apps…** asks for a folder
+(under your home folder) and lists the compose files in it and two levels
+below. Pick the ones to bring in, then go through them one at a time, *File
+2 of 5*. Next to the compose file, tick each service that is an app of its
+own, the one with a web page you open, and give it a name, an address (it
+suggests `http://<tailscale-ip>:<port>`) and an icon. One file can hold
+several apps (Immich and Navidrome in one compose file, say): tick both.
+Every other service (a database, a cache) belongs to one of them, guessed
+from `depends_on`, and starts, stops and is deleted with that app only.
+
+Each becomes an app in **Extras**, managed like the rest. Nothing is copied
+or moved: the record is `containers/extras/<app>/app.json`, pointing at your
+file and naming its services, and **Remove** takes it out of adlerOS without
+touching its containers or files. Their data lives wherever their compose
+files keep it, so `scripts/backup.sh` doesn't copy it.
+
+**Adding a widget** is one entry in
+`containers/core/os/app/static/widgets-catalog.json`: a type (`four-stats`,
+`three-stats`, `progress`, `gauges`, `list`, `text-button`, `clock`) and the
+named values it shows, from `VALUES` in `widgets.js`.
+
 ## First logins
 
 Every app has its own accounts, on top of Tailscale. Most work the same way:
@@ -323,6 +461,7 @@ Do that before you share your tailnet with anyone. The exceptions:
 | App | First login |
 | --- | --- |
 | Vaultwarden | Sign-ups are off. Open `/admin` with `VAULTWARDEN_ADMIN_TOKEN` from its `.env`, invite your email, then register with it. Afterwards, empty the token in `.env` and `docker compose up -d` to close `/admin`. |
+| Home screen | `OS_PASSWORD`, in `containers/core/os/.env`. Change it in Settings → Password; from then on, the changed one counts. |
 | Pi-hole | `PIHOLE_PASSWORD` |
 | Paperless-ngx | `PAPERLESS_ADMIN_USER` / `PAPERLESS_ADMIN_PASSWORD` |
 | File Browser | `admin` / `FILEBROWSER_ADMIN_PASSWORD` (reset to this on every start, so change it in `.env`) |
@@ -337,7 +476,7 @@ Do that before you share your tailnet with anyone. The exceptions:
 | Globnotes | No login by default, because being on your tailnet is the login. Set `GLOBNOTES_AUTH_TYPE=password` in its `.env` to add one. |
 
 Each value lives in that app's `.env`, e.g.
-`containers/documents/paperless-ngx/.env`.
+`containers/productivity/paperless-ngx/.env`.
 
 ## Security model
 
@@ -366,6 +505,17 @@ home network, only from devices on your tailnet.
   (`chmod 600`) and are never committed. Where an upstream compose file
   ships a public default (Dawarich's `SECRET_KEY_BASE=CHANGE_ME`, Maybe's
   sample key), this repo makes the value required and generates it.
+- **The home screen can't run anything.** Settings and the App Store only
+  queue requests; the helper on the host runs nothing but the actions
+  listed in `scripts/agent/actions.json`, as your user (see
+  [Settings and the helper](#settings-and-the-helper)). The App Store's
+  actions take one of your apps by name; import only takes compose files
+  under your home folder, never one from the home screen's own data folder,
+  where it could have written one. So the most a compromised home screen
+  could do is stop or delete your apps (their data stays), install ones
+  from the catalog, or start a compose file you already have. In the
+  browser, restart, shut down, delete and stopping core apps also need
+  admin mode, which takes your password to turn on.
 - **Vaultwarden is HTTPS-only.** It's bound to `127.0.0.1`, reachable only
   through `tailscale serve` (or nginx in HTTPS mode), and sign-ups are off.
 
@@ -583,6 +733,25 @@ The Pi-specific preparation (USB boot, zram and swap) is in the
 ![qB](screenshots/qB.png)
 
 </details>
+
+## Credits
+
+- **Home screen design:** modelled on the umbrelOS desktop by
+  [Umbrel](https://umbrel.com). Its layout, sizes and behaviour were studied
+  from umbrelOS's public source, and reimplemented here in plain HTML, CSS
+  and JS. No umbrelOS code or artwork is included.
+- **Dock icons:** the App Store, Settings and Live Usage icons were drawn
+  for this repository (`containers/core/os/app/static/dock/`). The App
+  Store one is its own design, not Apple's.
+- **Font:** [Inter](https://rsms.me/inter/) by Rasmus Andersson, under the
+  SIL Open Font License (`containers/core/os/app/static/fonts/OFL.txt`).
+- **Wallpapers:** NASA photographs from the International Space Station and
+  the Space Shuttle, which are in the public domain: the aurora
+  (`iss072e159172`) and a sunrise over Earth's limb (`STS052-23-022`), from
+  [images.nasa.gov](https://images.nasa.gov).
+- **App icons:** fetched at runtime from
+  [dashboard-icons](https://github.com/homarr-labs/dashboard-icons). Each
+  icon belongs to its app's project.
 
 ---
 

@@ -1,11 +1,13 @@
 # The app catalog: one row per app, tab-separated. install.sh reads it to build
-# the app menu, the Glance dashboard and the URL summary; nothing else does.
+# the app menu, the Glance dashboard and the URL summary; the home screen
+# (core/os) reads it for its app grid.
 #
 #   genre      folder under containers/ (core is always installed)
 #   app        folder under the genre, and the name used with --apps
 #   subdomain  the app answers at http://<subdomain>.<DOMAIN>; - for none
 #   port       host port the app publishes, i.e. http://<tailscale-ip>:<port>
-#   icon       Glance icon (di: = dashboard-icons); - for none
+#   icon       icon on the home screen and in Glance (di: = dashboard-icons);
+#              - for a lettered tile
 #   name       display name
 #   about      one line for the menu
 #
@@ -13,31 +15,32 @@
 core	nginx	-	80	di:nginx	Nginx	Reverse proxy: turns <app>.<domain> into the right port
 core	pihole	dns	8081	di:pi-hole	Pi-hole	DNS for <app>.<domain>, plus ad blocking
 core	vaultwarden	vault	4345	di:vaultwarden	Vaultwarden	Password manager (HTTPS via tailscale serve)
-system	glance	home	8080	di:glance	Glance	Start page and dashboard of every app
+core	os	os	8686	-	adlerOS	Home screen with every app you installed, behind a password
+system	glance	home	8080	di:glance	Glance	Dashboard of widgets: feeds, calendar, containers
 system	beszel	stats	8042	di:beszel	Beszel	CPU, RAM, disk and container monitoring
-system	cup	cup	9898	-	Cup	Shows which container images have updates
-photos-video	immich	gallery	2283	di:immich	Immich	Photos and videos, with phone backup
-photos-video	stremio	watch	5543	di:stremio	Stremio	Streaming server for the Stremio apps
-audio	navidrome	music	4533	di:navidrome	Navidrome	Music streaming (Subsonic apps work too)
-audio	audiobookshelf	audiobook	13378	di:audiobookshelf	Audiobookshelf	Audiobooks, podcasts and e-books
-notes	globnotes	notes	8487	-	Globnotes	Markdown notes in storage/Notes (Obsidian-compatible)
-notes	memos	memos	5230	di:memos	Memos	Quick thoughts, Twitter-style
-notes	bookstack	books	6875	di:bookstack	BookStack	Wiki: shelves, books, chapters, pages
-knowledge	karakeep	bookmarks	3786	di:karakeep	Karakeep	Bookmarks that archive the page itself
+system	cup	cup	9898	di:cup	Cup	Shows which container images have updates
+media	immich	gallery	2283	di:immich	Immich	Photos and videos, with phone backup
+media	stremio	watch	5543	di:stremio	Stremio	Streaming server for the Stremio apps
+media	navidrome	music	4533	di:navidrome	Navidrome	Music streaming (Subsonic apps work too)
+media	audiobookshelf	audiobook	13378	di:audiobookshelf	Audiobookshelf	Audiobooks, podcasts and e-books
+knowledge	globnotes	notes	8487	-	Globnotes	Markdown notes in storage/Notes (Obsidian-compatible)
+knowledge	memos	memos	5230	di:memos	Memos	Quick thoughts, Twitter-style
+knowledge	bookstack	books	6875	di:bookstack	BookStack	Wiki: shelves, books, chapters, pages
+knowledge	karakeep	bookmarks	3786	di:karakeep-dark	Karakeep	Bookmarks that archive the page itself
 knowledge	kiwix	wiki	8092	di:kiwix	Kiwix	Offline Wikipedia and other .zim archives
 knowledge	4get	search	9364	-	4get	Private metasearch engine
-documents	paperless-ngx	docs	8302	di:paperless-ngx	Paperless-ngx	Scanned documents with OCR and search
-documents	cryptpad	workspace	7000	di:cryptpad	CryptPad	End-to-end encrypted office suite (needs HTTPS)
 productivity	vikunja	todo	3456	di:vikunja	Vikunja	Tasks, Kanban, Gantt
-productivity	super-productivity	schedule	5432	-	Super Productivity	Time blocking and planning, synced over WebDAV
+productivity	super-productivity	schedule	5432	di:super-productivity	Super Productivity	Time blocking and planning, synced over WebDAV
 productivity	radicale	cal	5222	di:radicale	Radicale	Calendar and contacts (CalDAV/CardDAV)
-travel	dawarich	timeline	3001	di:dawarich	Dawarich	Location history (Google Timeline replacement)
-travel	trek	trips	3210	-	TREK	Trip planner
-travel	airtrail	fly	9478	-	AirTrail	Flight log
-trackers	yamtrack	catalogue	2143	-	Yamtrack	Movies, shows, anime, books and games you've watched/read/played
-trackers	nomie	track	5005	-	Nomie	Life and mood tracking
-finance	ghostfolio	assets	3333	di:ghostfolio	Ghostfolio	Investment portfolio and net worth
-finance	maybe	budget	13400	-	Maybe	Budgeting and expenses
+productivity	paperless-ngx	docs	8302	di:paperless-ngx	Paperless-ngx	Scanned documents with OCR and search
+productivity	cryptpad	workspace	7000	di:cryptpad	CryptPad	End-to-end encrypted office suite (needs HTTPS)
+productivity	nomie	track	5005	di:nomie	Nomie	Life and mood tracking
+life	dawarich	timeline	3001	di:dawarich	Dawarich	Location history (Google Timeline replacement)
+life	trek	trips	3210	-	TREK	Trip planner
+life	airtrail	fly	9478	-	AirTrail	Flight log
+life	yamtrack	catalogue	2143	di:yamtrack	Yamtrack	Movies, shows, anime, books and games you've watched/read/played
+life	ghostfolio	assets	3333	di:ghostfolio	Ghostfolio	Investment portfolio and net worth
+life	maybe	budget	13400	di:maybe	Maybe	Budgeting and expenses
 files	syncthing	sync	8384	di:syncthing	Syncthing	Keeps folders in sync across your devices
 files	filebrowser	storage	8090	di:filebrowser	File Browser	Web file manager for the whole homelab folder
 files	gitea	git	3000	di:gitea	Gitea	Git server (SSH on port 222)

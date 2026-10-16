@@ -108,8 +108,21 @@ So that `gallery.homelab.local` means something to your phone:
   Certificates**, then run `./install.sh` once more so it can set up
   `tailscale serve`.
 
-Now open `http://home.homelab.local` from your phone (with Tailscale on):
-that's Glance, with every app you installed and whether it's up.
+Now open `http://homelab.local` from your phone (with Tailscale on). That's
+your home screen: every app you installed, over a wallpaper, with a dock
+and search (⌘K). An app that doesn't respond shows as *Offline*. Its
+password is `OS_PASSWORD`:
+
+```bash
+grep OS_PASSWORD ~/homelab/containers/core/os/.env
+```
+
+Add it to your phone's home screen (Share → Add to Home Screen) and it
+opens like an app: adlerOS. Your apps are grouped into pages by
+collection. Open **Settings** from its dock to set your name, a different
+password and a wallpaper. That's also where Back up now, Update, Restart,
+and the domain and timezone live from now on. Right-click (long-press on a
+phone) an app to keep it in the dock, or the desktop to pick widgets.
 
 ## 4. Log in to everything
 
@@ -162,7 +175,14 @@ where secrets end up, pruning old backups), are in
 
 ## 6. Living with it
 
-- **Add or remove apps:** run `./install.sh` again.
+- **Change the domain or timezone, back up, update, restart:** the home
+  screen's Settings.
+- **Start, stop or restart an app, or bring in compose files you already
+  run:** the App Store in the dock (see
+  [The App Store](README.md#the-app-store)).
+- **See what's using the CPU or memory:** Live Usage in the dock.
+- **Add or remove apps:** **Install** and **Delete** in the App Store, or
+  run `./install.sh` again and tick or untick them.
 - **Update apps:** run `docker compose pull && docker compose up -d` in an
   app's folder; Cup shows which ones have updates.
 - **Update this repo:** `git pull && ./install.sh`.
