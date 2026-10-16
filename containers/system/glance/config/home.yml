@@ -1,0 +1,15 @@
+- name: Home
+  columns:
+    - size: small
+      widgets:
+        - type: calendar
+          first-day-of-week: monday
+        - type: docker-containers
+          hide-by-default: false
+
+    - size: full
+      widgets:
+        - type: search
+          search-engine: duckduckgo
+        # Every installed app with a live up/down check (generated).
+        - $include: apps.yml

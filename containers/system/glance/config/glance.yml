@@ -1,0 +1,7 @@
+# Glance configuration: https://github.com/glanceapp/glance/blob/main/docs/configuration.md
+# Edit freely. install.sh only ever rewrites apps.yml.
+server:
+  assets-path: /app/assets
+
+pages:
+  - $include: home.yml

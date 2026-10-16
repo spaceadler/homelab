@@ -1,0 +1,20 @@
+# File Browser (Quantum): a web file manager for the whole homelab folder.
+# Login: admin / FILEBROWSER_ADMIN_PASSWORD from .env. File Browser resets
+# the admin password to that value on every start, so change it in .env (and
+# re-run ./install.sh), not in the UI.
+#
+# Like Syncthing it sees every app's .env. Narrow the source in
+# config.yaml.template (e.g. /homelab/storage) if other people log in here.
+services:
+  filebrowser:
+    image: gtstef/filebrowser:stable
+    container_name: filebrowser
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+    volumes:
+      - ./data:/home/filebrowser/data
+      - ./config.yaml:/home/filebrowser/config.yaml:ro
+      - ${HOMELAB_DIR:?run ./install.sh}:/homelab
+    environment:
+      FILEBROWSER_CONFIG: config.yaml

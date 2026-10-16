@@ -1,0 +1,13 @@
+# Memos: quick, timeline-style notes. The first account is the admin.
+services:
+  memos:
+    image: neosmemo/memos:stable
+    container_name: memos
+    restart: unless-stopped
+    ports:
+      - "5230:5230"
+    volumes:
+      - ./memos:/var/opt/memos
+    environment:
+      MEMOS_MODE: prod
+      MEMOS_PORT: 5230

@@ -1,0 +1,15 @@
+# Audiobookshelf: audiobooks, podcasts and e-books, with progress synced
+# across its phone apps. The first account is the root user.
+services:
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    restart: unless-stopped
+    ports:
+      - "13378:80"
+    volumes:
+      - ${STORAGE_DIR:?run ./install.sh}/Media/Audiobooks:/audiobooks
+      - ${STORAGE_DIR:?run ./install.sh}/Media/Podcasts:/podcasts
+      - ${STORAGE_DIR:?run ./install.sh}/Media/Books:/books
+      - ./metadata:/metadata
+      - ./config:/config

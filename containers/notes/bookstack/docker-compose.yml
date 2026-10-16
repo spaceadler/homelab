@@ -1,0 +1,41 @@
+# BookStack: a wiki organised as shelves → books → chapters → pages.
+#
+# First login is BookStack's built-in default: admin@admin.com / password.
+# Change both right away (top right → My Account).
+services:
+  bookstack:
+    image: lscr.io/linuxserver/bookstack:latest
+    container_name: bookstack
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID:?run ./install.sh}
+      PGID: ${PGID:?run ./install.sh}
+      TZ: ${TZ:?run ./install.sh}
+      APP_URL: ${URL_SCHEME:-http}://books.${DOMAIN:?run ./install.sh}
+      APP_KEY: ${BOOKSTACK_APP_KEY:?run ./install.sh}
+      DB_HOST: bookstack_db
+      DB_PORT: 3306
+      DB_USERNAME: bookstack
+      DB_PASSWORD: ${BOOKSTACK_DB_PASSWORD:?run ./install.sh}
+      DB_DATABASE: bookstackapp
+    volumes:
+      - ./bookstack_app_data:/config
+    ports:
+      - "6875:80"
+    depends_on:
+      - bookstack_db
+
+  bookstack_db:
+    image: lscr.io/linuxserver/mariadb:latest
+    container_name: bookstack_db
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID:?run ./install.sh}
+      PGID: ${PGID:?run ./install.sh}
+      TZ: ${TZ:?run ./install.sh}
+      MYSQL_ROOT_PASSWORD: ${BOOKSTACK_DB_ROOT_PASSWORD:?run ./install.sh}
+      MYSQL_DATABASE: bookstackapp
+      MYSQL_USER: bookstack
+      MYSQL_PASSWORD: ${BOOKSTACK_DB_PASSWORD:?run ./install.sh}
+    volumes:
+      - ./bookstack_db_data:/config

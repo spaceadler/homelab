@@ -1,0 +1,15 @@
+# Stremio: the streaming server the Stremio apps offload to. The web player
+# is at watch.<DOMAIN>; the apps talk to the server on port 11470 directly.
+services:
+  stremio:
+    image: tsaridas/stremio-docker:latest
+    container_name: stremio-docker
+    restart: unless-stopped
+    environment:
+      - NO_CORS=1
+      - AUTO_SERVER_URL=1
+    ports:
+      - "5543:8080"
+      - "11470:11470"
+    volumes:
+      - ./stremio-data:/root/.stremio-server

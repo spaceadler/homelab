@@ -1,0 +1,29 @@
+# Vaultwarden: a Bitwarden-compatible password manager.
+#
+# The Bitwarden apps and the web vault refuse plain HTTP, so this app is
+# always HTTPS, at VAULT_HOST:
+#   default     `tailscale serve` gives it a real Let's Encrypt certificate for
+#               this machine's tailnet name, https://<machine>.<tailnet>.ts.net
+#               (post-start.sh sets that up); vault.<DOMAIN> redirects there.
+#   HTTPS mode  with your own domain certificate (docs/tls.md), nginx serves
+#               it at https://vault.<DOMAIN> like every other app.
+# It's bound to 127.0.0.1, so plain HTTP on the Tailscale IP can't reach it.
+#
+# Sign-ups are off. To create your account: open https://<VAULT_HOST>/admin,
+# log in with VAULTWARDEN_ADMIN_TOKEN from .env, invite your email, then
+# register with that email (no mail server needed). Afterwards, empty
+# VAULTWARDEN_ADMIN_TOKEN in .env and run `docker compose up -d` to close /admin.
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    environment:
+      DOMAIN: https://${VAULT_HOST:?no Tailscale MagicDNS name yet; see pre-start.sh}
+      SIGNUPS_ALLOWED: "false"
+      INVITATIONS_ALLOWED: "true"
+      ADMIN_TOKEN: ${VAULTWARDEN_ADMIN_TOKEN:-}
+    ports:
+      - "127.0.0.1:4345:80"
+    volumes:
+      - ./data:/data

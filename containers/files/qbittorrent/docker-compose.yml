@@ -1,0 +1,21 @@
+# qBittorrent: torrent client, downloading into storage/Downloads. The web UI
+# user is "admin" with a temporary password printed in the logs on first
+# start; post-start.sh shows it. Set a real one under Tools → Options → Web UI.
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID:?run ./install.sh}
+      PGID: ${PGID:?run ./install.sh}
+      TZ: ${TZ:?run ./install.sh}
+      WEBUI_PORT: 6420
+      TORRENTING_PORT: 6881
+    volumes:
+      - ./config:/config
+      - ${STORAGE_DIR:?run ./install.sh}/Downloads:/downloads
+    ports:
+      - "6420:6420"
+      - "6881:6881"
+      - "6881:6881/udp"

@@ -1,0 +1,34 @@
+# AirTrail: a log of your flights, with maps and statistics.
+services:
+  db:
+    container_name: airtrail_db
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: airtrail
+      POSTGRES_USER: airtrail
+      POSTGRES_PASSWORD: ${AIRTRAIL_DB_PASSWORD:?run ./install.sh}
+    volumes:
+      - ./db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airtrail -d airtrail"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  airtrail:
+    container_name: airtrail
+    image: johly/airtrail:latest
+    restart: always
+    environment:
+      ORIGIN: ${URL_SCHEME:-http}://fly.${DOMAIN:?run ./install.sh}
+      DB_URL: postgres://airtrail:${AIRTRAIL_DB_PASSWORD:?run ./install.sh}@db:5432/airtrail
+      UPLOAD_LOCATION: ./uploads
+      BODY_SIZE_LIMIT: 50M
+    ports:
+      - "9478:3000"
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy

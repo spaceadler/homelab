@@ -1,0 +1,19 @@
+# Beszel: monitoring. This is the hub, the web UI at stats.<DOMAIN>; the
+# agent in ./agent reports this machine's CPU, memory, disks and containers
+# to it.
+#
+# The agent needs the hub's public key, which only exists once the hub has
+# started, so post-start.sh reads it into agent/.env and starts the agent.
+# Then, in the hub: Add System → host host.docker.internal, port 45876.
+services:
+  beszel:
+    image: henrygd/beszel:latest
+    container_name: beszel
+    restart: unless-stopped
+    ports:
+      - "8042:8090"
+    volumes:
+      - ./beszel_data:/beszel_data
+    # How the hub reaches the agent, which runs on the host network.
+    extra_hosts:
+      - host.docker.internal:host-gateway

@@ -1,0 +1,13 @@
+# Cup: shows which of your container images have newer versions. It only
+# reports; updating is `docker compose pull && docker compose up -d` per app.
+services:
+  cup:
+    image: ghcr.io/sergi0g/cup:latest
+    container_name: cup
+    restart: unless-stopped
+    command: serve
+    ports:
+      - "9898:8000"
+    volumes:
+      # Docker's API has no read-only mode: :ro protects the socket file only.
+      - /var/run/docker.sock:/var/run/docker.sock:ro

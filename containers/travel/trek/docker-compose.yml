@@ -1,0 +1,40 @@
+# TREK: plan trips with maps, itineraries, bookings and budgets.
+# Already hardened upstream: read-only filesystem, all capabilities dropped
+# except the three it needs to fix file ownership at startup.
+services:
+  app:
+    image: mauriceboe/trek:latest
+    container_name: trek
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    tmpfs:
+      - /tmp:noexec,nosuid,size=128m
+    ports:
+      - "3210:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Plain HTTP on the tailnet; switch to true once you serve it over HTTPS.
+      COOKIE_SECURE: "false"
+      ENCRYPTION_KEY: ${TREK_ENCRYPTION_KEY:?run ./install.sh}
+      TZ: ${TZ:?run ./install.sh}
+      LOG_LEVEL: info
+      ALLOWED_ORIGINS: ${URL_SCHEME:-http}://trips.${DOMAIN:?run ./install.sh}
+      APP_URL: ${URL_SCHEME:-http}://trips.${DOMAIN:?run ./install.sh}
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s

@@ -1,0 +1,40 @@
+# CryptPad: an end-to-end encrypted office suite (documents, sheets, slides,
+# whiteboards). It runs on two hostnames: workspace.<DOMAIN> for the app and
+# workspacesb.<DOMAIN> as a sandbox that isolates untrusted content.
+#
+# Needs HTTPS: CryptPad's docs require it for anything beyond local testing,
+# so expect parts not to work on plain http://. See docs/tls.md.
+# First start downloads OnlyOffice (~900 MB) into ./onlyoffice-dist.
+services:
+  cryptpad:
+    image: cryptpad/cryptpad:latest
+    hostname: cryptpad
+    restart: unless-stopped
+    environment:
+      CPAD_MAIN_DOMAIN: ${URL_SCHEME:-http}://workspace.${DOMAIN:?run ./install.sh}
+      CPAD_SANDBOX_DOMAIN: ${URL_SCHEME:-http}://workspacesb.${DOMAIN:?run ./install.sh}
+      CPAD_CONF: /cryptpad/config/config.js
+      CPAD_INSTALL_ONLYOFFICE: "yes"
+    volumes:
+      - ./data/blob:/cryptpad/blob
+      - ./data/block:/cryptpad/block
+      - ./customize:/cryptpad/customize
+      - ./data/data:/cryptpad/data
+      - ./data/files:/cryptpad/datastore
+      - ./onlyoffice-dist:/cryptpad/www/common/onlyoffice/dist
+      - ./onlyoffice-conf:/cryptpad/onlyoffice-conf
+      - ./config.js:/cryptpad/config/config.js
+    ports:
+      - "7000:3000"
+      - "7007:3003"
+    ulimits:
+      nofile:
+        soft: 1000000
+        hard: 1000000
+
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      # Fits inside Tailscale's 1280-byte MTU, so large packets aren't dropped.
+      com.docker.network.driver.mtu: 1280
