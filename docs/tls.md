@@ -134,7 +134,7 @@ on HTTPS mode:
   during the handshake.
 - **Apps:** each app's own idea of its address (BookStack's `APP_URL`,
   Paperless's `PAPERLESS_URL`, CryptPad's origins, the CORS settings, the
-  Glance dashboard) switches to `https://`.
+  Glance dashboard, the home screen's links) switches to `https://`.
 - **Vaultwarden** moves to `https://vault.lab.example.com`, served by nginx.
   `tailscale serve` is switched off, because nginx needs port 443.
 - **Pi-hole** now answers `*.lab.example.com` instead of `*.homelab.local`.

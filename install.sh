@@ -77,7 +77,14 @@ env_file_set() {
         { cat "$file" 2>/dev/null || true; printf '%s=%s\n' "$2" "$3"; } >"$tmp"
     fi
     chmod 600 "$tmp"
-    mv -f "$tmp" "$file"
+    # Rewritten in place, not replaced, when it exists: the home screen sees
+    # homelab.env through a bind mount of that one file, which would go on
+    # showing a replaced file's old copy.
+    if [ -f "$file" ]; then
+        cat "$tmp" >"$file" && rm -f "$tmp"
+    else
+        mv -f "$tmp" "$file"
+    fi
 }
 # For hooks: set_env KEY VALUE edits the app's own .env.
 set_env() { env_file_set .env "$1" "$2"; }
@@ -148,7 +155,7 @@ host_packages() {
 
     sudo apt-get update -qq
     sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-        ca-certificates curl git gettext-base openssl openssh-client ufw whiptail >/dev/null
+        ca-certificates curl git gettext-base openssl openssh-client python3 rsync ufw whiptail >/dev/null
 
     if ! command -v docker >/dev/null; then
         info "installing Docker from download.docker.com"
@@ -275,6 +282,51 @@ free_dns_port() {
         warn "something else already listens on port 53; Pi-hole won't start until it's stopped:"
         sudo ss -Hlnup 'sport = :53' | sed 's/^/      /' >&2
     fi
+}
+
+# The home screen's helper: a systemd service, running as you, that carries
+# out what the home screen asks for (apply settings, back up, update...) from
+# the fixed list in scripts/agent/actions.json. The home screen itself never
+# gets Docker or root access. Root-only steps go through sudo to root-owned
+# copies of two scripts, and the sudoers rule allows exactly those.
+install_agent() {
+    step "Home screen helper"
+    local lib=/usr/local/libexec/homelab units=/etc/systemd/system tmp unit
+    if [[ $HOMELAB_DIR =~ [[:space:]\|\&\\] ]]; then
+        warn "this folder's path has a space or one of | & \\; move it for the home screen's helper to work"
+        return
+    fi
+    tmp=$(mktemp)
+    sudo install -d -m 0755 -o root -g root "$lib"
+    # backup.sh finds the homelab folder from its own location; the root copy
+    # lives elsewhere, so it gets the path written in.
+    sed "s|^HOMELAB=.*|HOMELAB=\"$HOMELAB_DIR\"|" "$HOMELAB_DIR/scripts/backup.sh" >"$tmp"
+    sudo install -m 0755 -o root -g root "$tmp" "$lib/backup"
+    sudo install -m 0755 -o root -g root "$HOMELAB_DIR/scripts/agent/power" "$lib/power"
+
+    {
+        echo "# Written by install.sh. The homelab helper runs as $USER and may run"
+        echo "# exactly these as root, without a password, and nothing else."
+        echo "$USER ALL=(root) NOPASSWD: $lib/backup, $lib/power reboot, $lib/power poweroff"
+    } >"$tmp"
+    if ! sudo visudo -cf "$tmp" >/dev/null; then
+        rm -f "$tmp"
+        die "the generated sudoers rule didn't validate; nothing was installed"
+    fi
+    sudo install -m 0440 -o root -g root "$tmp" /etc/sudoers.d/homelab
+
+    for unit in service path; do
+        # Single quotes on purpose: envsubst takes the names, not the values.
+        # shellcheck disable=SC2016
+        AGENT_USER=$USER AGENT_GROUP=$(id -gn) HOMELAB_DIR=$HOMELAB_DIR \
+            envsubst '${AGENT_USER} ${AGENT_GROUP} ${HOMELAB_DIR}' \
+            <"$HOMELAB_DIR/scripts/agent/homelab-agent.$unit.template" >"$tmp"
+        sudo install -m 0644 -o root -g root "$tmp" "$units/homelab-agent.$unit"
+    done
+    rm -f "$tmp"
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now homelab-agent.path >/dev/null 2>&1
+    info "ready: settings, backups and updates from the home screen (log: journalctl -u homelab-agent)"
 }
 
 # ------------------------------------------------------------------ settings
@@ -550,6 +602,9 @@ summary() {
     [ ${#FAILED[@]} -eq 0 ] || warn "failed: ${FAILED[*]}"
     cat <<EOF
 
+    Home screen: ${GLOBALS[URL_SCHEME]}://os.$d (or http://$ip:8686), with the password
+    OS_PASSWORD from containers/core/os/.env.
+
     Next steps
     1. Names: Tailscale admin console → DNS (https://login.tailscale.com/admin/dns)
        → Add nameserver → Custom: $ip, "Restrict to domain": $d.
@@ -591,6 +646,7 @@ main() {
         host_packages
         firewall_setup
         free_dns_port
+        install_agent
     fi
     for c in openssl envsubst docker; do
         command -v $c >/dev/null || die "'$c' is missing (run without --no-host to install it)"

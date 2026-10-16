@@ -1,0 +1,62 @@
+# adlerOS: the home screen at os.<DOMAIN> (the bare domain redirects here),
+# styled after umbrelOS: a wallpaper, a greeting, widgets, your apps on one
+# page per collection (an app that doesn't answer shows as Offline; apps in no
+# collection, like the ones you import, are under Extras), search (⌘K / Ctrl+K)
+# and a dock of your pinned apps plus the App Store, Settings and Live Usage.
+# The App Store installs, starts, stops, restarts and deletes apps, and
+# imports compose files you already have; Live Usage charts the machine and
+# each app's share. Behind a password: OS_PASSWORD in
+# .env. Right-click (or long-press) for menus; drag apps to rearrange them.
+#
+# Python's standard library and plain HTML/CSS/JS, nothing to build. It has no
+# Docker or root access: it runs as you, read-only, with no capabilities.
+# Settings that change the machine (homelab.env, backups, updates, restart)
+# are requests it queues in ./data/agent for the homelab helper on the host,
+# which runs only what scripts/agent/actions.json allows.
+services:
+  os:
+    image: python:3.13-alpine
+    container_name: homelab-os
+    restart: unless-stopped
+    user: ${PUID:?run ./install.sh}:${PGID:?run ./install.sh}
+    # Host network: it checks each app at 127.0.0.1:<port> (the only address
+    # Vaultwarden answers on), and port 8686 is guarded by ufw like any other
+    # host service: open on tailscale0, closed on the LAN.
+    network_mode: host
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    command: ["python", "-u", "/app/server.py"]
+    environment:
+      OS_PASSWORD: ${OS_PASSWORD:?run ./install.sh}
+      OS_SESSION_SECRET: ${OS_SESSION_SECRET:?run ./install.sh}
+      OS_NAME: ${OS_NAME:-}
+      OS_PORT: 8686
+      TZ: ${TZ:?run ./install.sh}
+      PYTHONDONTWRITEBYTECODE: 1
+    volumes:
+      - ./app:/app:ro
+      # App icons, fetched once from dashboard-icons and served from here, so
+      # your browser never talks to a third party.
+      - ./data:/data
+      # Your wallpaper: put an image here (the first one, by name, is used).
+      # Empty: the built-in aurora, photographed from the ISS (NASA, public domain).
+      - ./wallpaper:/wallpaper:ro
+      # Your own dock icons: app-store, settings or live-usage (.svg/.png/.webp)
+      # here replace the built-in ones. Kept out of git.
+      - ./icons:/icons:ro
+      - ../../catalog.tsv:/homelab/catalog.tsv:ro
+      # Apps you imported in the App Store (the helper writes these).
+      - ../../extras:/homelab/extras:ro
+      - ../../../homelab.env:/homelab/homelab.env:ro
+      # Read-only, for Settings: what the helper may do (it never runs
+      # anything itself, only queues requests in ./data/agent), when the
+      # last backup ran, and which OS this is.
+      - ../../../scripts/agent/actions.json:/homelab/actions.json:ro
+      - ../../../backup:/homelab/backup:ro
+      - /etc/os-release:/host/os-release:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8686/healthz', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

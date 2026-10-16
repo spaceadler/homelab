@@ -23,7 +23,10 @@ fi
 
 echo "📁 Creating backup directory: $TEMP_DIR"
 mkdir -p "$TEMP_DIR"
-chmod 700 "$TEMP_BASE" # the copy holds every app's secrets
+# The copies hold every app's secrets: root and your group only. Your group
+# can list them, so the home screen can show when the last backup ran.
+chown "root:$(stat -c %g "$HOMELAB")" "$TEMP_BASE"
+chmod 750 "$TEMP_BASE"
 
 echo "🔍 Finding running stacks..."
 # Only stacks with running containers: the repo has a folder for every app,
