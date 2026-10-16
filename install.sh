@@ -20,6 +20,9 @@ CONTAINERS="$HOMELAB_DIR/containers"
 CATALOG="$CONTAINERS/catalog.tsv"
 CONFIG="$HOMELAB_DIR/homelab.env"
 SITES="$CONTAINERS/core/nginx/sites"
+# adlerOS, the home screen, has its own repository; install.sh keeps a copy here.
+ADLEROS_DIR="$CONTAINERS/core/os/adleros"
+ADLEROS_REPO_DEFAULT="https://git.spaceadler.com/spaceadler/adleros.git"
 STORAGE_SUBDIRS=(Documents Downloads Files Gallery Inbox Notes
     Media/Audiobooks Media/Books Media/Kiwix Media/Music Media/Podcasts
     Media/Recordings Media/Screenshots)
@@ -289,25 +292,50 @@ free_dns_port() {
 # the fixed list in scripts/agent/actions.json. The home screen itself never
 # gets Docker or root access. Root-only steps go through sudo to root-owned
 # copies of two scripts, and the sudoers rule allows exactly those.
+# fetch_adleros: get adlerOS (or update it) into containers/core/os/adleros.
+# ADLEROS_REPO and ADLEROS_REF in homelab.env pick another copy or version.
+fetch_adleros() {
+    step "adlerOS (the home screen)"
+    local repo ref
+    repo=$(conf_get ADLEROS_REPO)
+    repo=${repo:-$ADLEROS_REPO_DEFAULT}
+    ref=$(conf_get ADLEROS_REF)
+    ref=${ref:-main}
+    if [ -d "$ADLEROS_DIR/.git" ]; then
+        if git -C "$ADLEROS_DIR" fetch -q --depth 1 origin "$ref" && git -C "$ADLEROS_DIR" checkout -q --detach FETCH_HEAD; then
+            info "up to date: $ref ($(git -C "$ADLEROS_DIR" rev-parse --short HEAD))"
+        else
+            warn "couldn't update adlerOS from $repo; keeping the copy you have"
+        fi
+    elif [ -e "$ADLEROS_DIR/app/server.py" ]; then
+        info "using the copy in ${ADLEROS_DIR#"$HOMELAB_DIR"/} (not a git checkout, so not updated)"
+    else
+        git clone -q --depth 1 --branch "$ref" "$repo" "$ADLEROS_DIR" || die "couldn't fetch adlerOS from $repo"
+        info "fetched $ref from $repo"
+    fi
+}
+
 install_agent() {
     step "Home screen helper"
-    local lib=/usr/local/libexec/homelab units=/etc/systemd/system tmp unit
+    local lib=/usr/local/libexec/homelab adlib=/usr/local/libexec/adleros units=/etc/systemd/system tmp unit
     if [[ $HOMELAB_DIR =~ [[:space:]\|\&\\] ]]; then
         warn "this folder's path has a space or one of | & \\; move it for the home screen's helper to work"
         return
     fi
     tmp=$(mktemp)
-    sudo install -d -m 0755 -o root -g root "$lib"
+    sudo install -d -m 0755 -o root -g root "$lib" "$adlib"
     # backup.sh finds the homelab folder from its own location; the root copy
     # lives elsewhere, so it gets the path written in.
     sed "s|^HOMELAB=.*|HOMELAB=\"$HOMELAB_DIR\"|" "$HOMELAB_DIR/scripts/backup.sh" >"$tmp"
     sudo install -m 0755 -o root -g root "$tmp" "$lib/backup"
-    sudo install -m 0755 -o root -g root "$HOMELAB_DIR/scripts/agent/power" "$lib/power"
+    # Restart and shut down: adlerOS's script, where adlerOS's actions expect it.
+    sudo install -m 0755 -o root -g root "$ADLEROS_DIR/agent/power" "$adlib/power"
+    sudo rm -f "$lib/power" # where it used to live
 
     {
         echo "# Written by install.sh. The homelab helper runs as $USER and may run"
         echo "# exactly these as root, without a password, and nothing else."
-        echo "$USER ALL=(root) NOPASSWD: $lib/backup, $lib/power reboot, $lib/power poweroff"
+        echo "$USER ALL=(root) NOPASSWD: $lib/backup, $adlib/power reboot, $adlib/power poweroff"
     } >"$tmp"
     if ! sudo visudo -cf "$tmp" >/dev/null; then
         rm -f "$tmp"
@@ -641,6 +669,7 @@ main() {
     [ "$(id -u)" -ne 0 ] || die "run this as your normal user, not root; it uses sudo where it needs to"
 
     load_catalog
+    fetch_adleros
     if [ $DO_HOST = 1 ]; then
         sudo -v || die "needs sudo"
         host_packages
