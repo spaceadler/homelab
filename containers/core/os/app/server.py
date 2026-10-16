@@ -12,6 +12,9 @@ folder mounted read-only.
     GET  /api/wallpaper    the chosen wallpaper (?id=... for a specific one)
     GET  /api/dock-icon/<name>  a dock icon: yours from ./icons, or the built-in
     GET  /api/widgets      the desktop widgets you chose, and what they show
+    GET  /api/updates      images with a newer version, from Cup if it's installed
+    GET  /api/notifications           what happened: apps offline, jobs, warnings
+    POST /api/notifications           {"read": "all"} or {"clear": true}
     GET  /api/settings     everything the Settings page shows
     POST /api/settings     any of {"name", "wallpaper", "searchUrl", "dock",
                            "widgets", "order"} (order: {collection: [app ids]})
@@ -58,12 +61,13 @@ HOST_OS_RELEASE = Path(os.environ.get("HOST_OS_RELEASE", "/host/os-release"))
 DATA = Path(os.environ.get("OS_DATA", "/data"))
 ICONS = DATA / "icons"
 SETTINGS_FILE = DATA / "settings.json"
+NOTIFICATIONS_FILE = DATA / "notifications.json"
 QUEUE = DATA / "agent" / "queue"
 JOBS = DATA / "agent" / "jobs"
 # Your own icons for the dock's fixed items (mounted from ./icons):
 # app-store.png, settings.svg... replace the built-in ones.
 ICON_OVERRIDES = Path(os.environ.get("OS_ICON_DIR", "/icons"))
-DOCK_FIXED = ("app-store", "settings", "live-usage")
+DOCK_FIXED = ("app-drawer", "app-store", "settings", "live-usage")
 DOCK_MAX_PINS = 12
 # The widgets you can put on the desktop, with the defaults and the limit.
 WIDGET_CATALOG = STATIC / "widgets-catalog.json"
@@ -591,6 +595,57 @@ def queue_action(name, params, actions):
         return job, None
 
 
+# ----------------------------------------------------------------- updates
+
+_cup = {"at": -1e9, "images": None}
+CUP_TTL = 600
+
+
+def normalize_image(ref):
+    """One spelling per image: docker.io/library/redis -> redis:latest."""
+    ref = ref.strip()
+    for prefix in ("docker.io/library/", "docker.io/", "index.docker.io/library/", "index.docker.io/"):
+        if ref.startswith(prefix):
+            ref = ref[len(prefix):]
+            break
+    ref = ref.removeprefix("library/")
+    name = ref.split("@", 1)[0]
+    if "@" not in ref and ":" not in name.rsplit("/", 1)[-1]:
+        ref += ":latest"
+    return ref
+
+
+def image_updates():
+    """The images Cup says have a newer version, cached for CUP_TTL seconds;
+    None when Cup isn't installed or doesn't answer. Cup's API has moved
+    between versions, so v3, v2 and the old /json are all understood."""
+    cup = next((a for a in installed_apps() if a["id"] == "cup"), None)
+    if not cup:
+        return None
+    now = time.monotonic()
+    if now - _cup["at"] < CUP_TTL:
+        return _cup["images"]
+    found = None
+    for path in ("/api/v3/json", "/api/v2/json", "/json"):
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{cup['port']}{path}", timeout=4) as r:
+                data = json.loads(r.read(5_000_000))
+        except (OSError, ValueError):
+            continue
+        images = data.get("images") if isinstance(data, dict) else None
+        if isinstance(images, list):
+            found = {normalize_image(i["reference"]) for i in images
+                     if isinstance(i, dict) and isinstance(i.get("reference"), str)
+                     and isinstance(i.get("result"), dict) and i["result"].get("has_update") is True}
+        elif isinstance(images, dict):
+            found = {normalize_image(ref) for ref, has_update in images.items() if has_update is True}
+        else:
+            continue
+        break
+    _cup.update(at=now, images=sorted(found) if found is not None else None)
+    return _cup["images"]
+
+
 # ------------------------------------------------------------------ status
 
 _status = {}
@@ -723,6 +778,137 @@ def app_icon(app_id):
             return ctype, data
     missing.touch()
     return None
+
+
+# ----------------------------------------------------------- notifications
+
+KEEP_NOTIFICATIONS = 100
+WATCH_SECONDS = 60
+_notes_lock = threading.Lock()
+# Jobs worth telling you about when they finish (all of them when they fail).
+NOTIFY_DONE = {"backup": "Backup finished", "update": "Homelab updated", "apply-config": "Settings applied",
+               "app-install": "Installed", "app-update": "Updated"}
+
+
+def load_notifications():
+    try:
+        items = json.loads(NOTIFICATIONS_FILE.read_text()).get("items", [])
+    except (OSError, ValueError, AttributeError):
+        return []
+    return [n for n in items if isinstance(n, dict)]
+
+
+def notify(kind, title, body="", open_target=""):
+    """Add a notification: kind is offline, online, job-done, job-failed, disk,
+    heat or updates; open_target what clicking it opens (as in widgets)."""
+    with _notes_lock:
+        items = load_notifications()
+        items.append({"id": secrets.token_hex(6), "time": int(time.time()), "kind": kind, "title": title,
+                      "body": body, "open": open_target, "read": False})
+        write_private(NOTIFICATIONS_FILE, json.dumps({"items": items[-KEEP_NOTIFICATIONS:]}))
+
+
+def update_notifications(change):
+    with _notes_lock:
+        items = load_notifications()
+        if change == "clear":
+            items = []
+        else:
+            for n in items:
+                n["read"] = True
+        write_private(NOTIFICATIONS_FILE, json.dumps({"items": items}))
+
+
+class Watcher:
+    """Every WATCH_SECONDS: apps that stop or start answering, jobs that end,
+    a filling disk, a hot CPU, new updates from Cup. Runs in its own thread."""
+
+    def __init__(self):
+        self.down = {}  # app id -> consecutive failed checks
+        self.told_down = set()
+        self.started = time.time()
+        self.seen_jobs = set()
+        self.last = {"disk": 0, "heat": 0, "updates": 0}
+        self.update_count = None
+
+    def apps(self):
+        apps = installed_apps()
+        status = app_status(apps)
+        for app in apps:
+            if status[app["id"]]:
+                self.down[app["id"]] = 0
+                if app["id"] in self.told_down:
+                    self.told_down.discard(app["id"])
+                    notify("online", f"{app['name']} is back", "It's answering again.", "app-store")
+                continue
+            self.down[app["id"]] = self.down.get(app["id"], 0) + 1
+            # Twice in a row, so a restart doesn't count.
+            if self.down[app["id"]] == 2 and app["id"] not in self.told_down:
+                self.told_down.add(app["id"])
+                notify("offline", f"{app['name']} is offline", "It stopped answering. The App Store shows its logs.", "app-store")
+
+    def jobs(self):
+        actions = load_actions()
+        files = list(JOBS.glob("*.json")) if JOBS.is_dir() else []
+        self.seen_jobs &= {f.stem for f in files}  # the helper prunes old jobs; so do we
+        for f in files:
+            if f.stem in self.seen_jobs:
+                continue
+            job = read_job(f.stem)
+            if not job or job.get("status") not in ("done", "failed"):
+                continue
+            self.seen_jobs.add(f.stem)
+            try:
+                if f.stat().st_mtime < self.started:
+                    continue  # finished before adlerOS started: old news
+            except OSError:
+                continue
+            name = job.get("action")
+            if actions.get(name, {}).get("quiet"):
+                continue
+            app = (job.get("params") or {}).get("app")
+            what = next((a["name"] for a in installed_apps() + available_apps() if a["id"] == app), app) if app else ""
+            label = job.get("label") or name
+            if job["status"] == "failed":
+                # The helper's last words say why better than an exit code does.
+                why = next((l for l in reversed(job.get("log") or []) if l.strip() and not l.startswith("$ ")), "") or job.get("error") or ""
+                notify("job-failed", f"{label}{f': {what}' if what else ''} didn't work", why[:200], "settings" if not app else "app-store")
+            elif name in NOTIFY_DONE:
+                notify("job-done", f"{NOTIFY_DONE[name]}{f': {what}' if what else ''}", "", "settings:backup" if name == "backup" else "app-store" if app else "settings")
+
+    def machine(self):
+        info = device_info()
+        now = time.time()
+        disk = info.get("disk")
+        if disk and disk["total"] and disk["used"] / disk["total"] >= 0.9 and now - self.last["disk"] > 86400:
+            self.last["disk"] = now
+            notify("disk", f"Storage is {round(100 * disk['used'] / disk['total'])}% full",
+                   "Live Usage shows what's using it.", "live-usage")
+        temp = info.get("temperature")
+        if temp is not None and temp >= 80 and now - self.last["heat"] > 3600:
+            self.last["heat"] = now
+            notify("heat", f"Running hot: {round(temp)}°C", "Check the fan or the airflow around the machine.", "live-usage")
+
+    def updates(self):
+        now = time.time()
+        if now - self.last["updates"] < 6 * 3600:
+            return
+        self.last["updates"] = now
+        images = image_updates()
+        if images is None:
+            return
+        if self.update_count is not None and len(images) > self.update_count:
+            notify("updates", f"{len(images)} images have updates", "Cup found newer versions. Update apps from the App Store.", "app-store")
+        self.update_count = len(images)
+
+    def run(self):
+        while True:
+            for check in (self.apps, self.jobs, self.machine, self.updates):
+                try:
+                    check()
+                except Exception as e:  # one bad check mustn't stop the others
+                    print(f"watcher: {check.__name__}: {e!r}", flush=True)
+            time.sleep(WATCH_SECONDS)
 
 
 # ------------------------------------------------------------------ server
@@ -870,6 +1056,12 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, data, ctype, [("Cache-Control", "private, max-age=604800")], csp=ICON_CSP)
         if path == "/api/settings":
             return self.send_json(200, self.settings_payload())
+        if path == "/api/notifications":
+            items = load_notifications()[::-1]
+            return self.send_json(200, {"items": items, "unread": sum(not n.get("read") for n in items)})
+        if path == "/api/updates":
+            images = image_updates()
+            return self.send_json(200, {"checked": images is not None, "images": images or []})
         if path == "/api/widgets":
             return self.send_json(200, {"selected": selected_widgets(), "data": widget_data()})
         if path == "/api/jobs":
@@ -920,6 +1112,14 @@ class Handler(BaseHTTPRequestHandler):
             return self.change_password(body)
         if path == "/api/admin":
             return self.set_admin(body)
+        if path == "/api/notifications":
+            if body.get("read") == "all":
+                update_notifications("read")
+            elif body.get("clear") is True:
+                update_notifications("clear")
+            else:
+                return self.send_json(400, {"error": "expected {\"read\": \"all\"} or {\"clear\": true}"})
+            return self.send_json(200, {"ok": True})
         if path == "/api/actions":
             actions = load_actions()
             params, error = validate_action(body.get("action"), body.get("params"), actions)
@@ -1038,6 +1238,7 @@ def main():
     for folder in (ICONS, QUEUE, JOBS):
         folder.mkdir(parents=True, exist_ok=True)
     cpu_usage()  # first sample, so the first Settings view has a reading
+    threading.Thread(target=Watcher().run, name="watcher", daemon=True).start()
     server = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     server.daemon_threads = True
     print(f"adlerOS on :{PORT}", flush=True)

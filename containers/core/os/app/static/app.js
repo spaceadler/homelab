@@ -84,11 +84,24 @@ function loadWallpaper(id) {
 
 // ------------------------------------------------------------- greeting
 
-function greeting() {
-  const hour = new Date().getHours();
-  const part = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
+// What the desktop says, by the hour. Each part of the day has a few lines;
+// which one is picked by the date, so it holds steady all day.
+const GREETINGS = {
+  night: ["Up late, {name}?", "Still up, {name}?", "Burning the midnight oil, {name}?"], // 22:00-04:59
+  morning: ["Good morning, {name}.", "Morning, {name}.", "Rise and shine, {name}."], // 05:00-11:59
+  afternoon: ["Good afternoon, {name}.", "Afternoon, {name}."], // 12:00-16:59
+  evening: ["Good evening, {name}.", "Evening, {name}."], // 17:00-21:59
+};
+
+function greeting(now = new Date()) {
+  const hour = now.getHours();
+  const part = hour < 5 || hour >= 22 ? "night" : hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+  const lines = GREETINGS[part];
+  const day = Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000); // local date
+  const line = lines[day % lines.length];
   const first = state.name.split(/\s+/)[0];
-  return first ? `Good ${part}, ${first}.` : `Good ${part}.`;
+  // Without a name: "Good morning." / "Up late?"
+  return first ? line.replace("{name}", first) : line.replace(/, \{name\}/, "");
 }
 
 // ------------------------------------------------------------- app tiles
@@ -326,6 +339,7 @@ function appById(id) {
 // always stay. Their icons come from /api/dock-icon, so ./icons can replace them.
 // Clicking one whose window is open closes it again.
 const DOCK_FIXED = [
+  { id: "app-drawer", label: "All apps", run: () => toggleDrawer() },
   { id: "app-store", label: "App Store", run: () => toggleStore() },
   { id: "settings", label: "Settings", run: () => (isOpen("settings") ? closeSettings() : openSettings()) },
   { id: "live-usage", label: "Live Usage", run: () => toggleUsage() },
@@ -377,6 +391,7 @@ function buildDock() {
   markDockOpen("settings", isOpen("settings"));
   markDockOpen("app-store", isOpen("store"));
   markDockOpen("live-usage", isOpen("usage"));
+  markDockOpen("app-drawer", drawerOpen());
   sizeDock();
 }
 
@@ -450,8 +465,10 @@ function toast(text) {
 }
 
 // A context menu of {label, run, destructive} items at the pointer.
+let menuOpener = null; // focus goes back here when the menu closes
 function openMenu(x, y, items) {
   const menu = $("menu");
+  if (menu.hidden) menuOpener = document.activeElement !== document.body ? document.activeElement : null;
   menu.replaceChildren(...items.map((item) => {
     const button = el("button", { type: "button", role: "menuitem", class: item.destructive ? "destructive" : "" }, item.label);
     button.addEventListener("click", () => { closeMenu(); item.run(); });
@@ -464,7 +481,13 @@ function openMenu(x, y, items) {
   menu.style.top = `${Math.max(8, Math.min(y, window.innerHeight - h - 8))}px`;
   menu.querySelector("button").focus();
 }
-function closeMenu() { $("menu").hidden = true; }
+function closeMenu() {
+  const menu = $("menu");
+  if (menu.hidden) return;
+  const hadFocus = menu.contains(document.activeElement);
+  menu.hidden = true;
+  if (hadFocus && menuOpener?.isConnected) menuOpener.focus({ preventScroll: true });
+}
 
 function openApp(app) { window.open(app.url, "_blank", "noopener,noreferrer"); }
 
@@ -687,6 +710,7 @@ const ACTIONS = [
   { id: "settings", name: "Settings", keywords: "settings preferences options configure" },
   { id: "store", name: "App Store", keywords: "app store apps containers docker start stop restart delete install import manage" },
   { id: "usage", name: "Live Usage", keywords: "live usage cpu memory ram storage disk temperature stats monitor" },
+  { id: "drawer", name: "All apps", keywords: "all apps drawer launchpad list every app alphabetical" },
   { id: "logout", name: "Log out", keywords: "log out sign out lock exit" },
 ];
 let results = [];
@@ -712,7 +736,7 @@ function renderResults() {
   list.replaceChildren(...results.map((r, i) => {
     // Settings rows and the Settings / App Store actions wear their dock icons.
     const glyph = r.type === "setting" ? "settings"
-      : { settings: "settings", store: "app-store", usage: "live-usage" }[r.action?.id] || null;
+      : { settings: "settings", store: "app-store", usage: "live-usage", drawer: "app-drawer" }[r.action?.id] || null;
     const icon = r.type === "app"
       ? el("span", { class: "result-icon" }, plateFor(r.app))
       : glyph
@@ -743,6 +767,7 @@ function runResult(i) {
   else if (r.action.id === "settings") openSettings();
   else if (r.action.id === "store") openStore();
   else if (r.action.id === "usage") openUsage();
+  else if (r.action.id === "drawer") openDrawer();
   else if (r.action.id === "logout") confirmLogout();
 }
 
@@ -751,6 +776,7 @@ function runResult(i) {
 function showLock() {
   stopRefresh();
   stopWidgets();
+  stopNotes();
   stopArranging();
   closeSearch();
   closeMenu();
@@ -758,6 +784,7 @@ function showLock() {
   closeSettings();
   closeStore();
   closeUsage();
+  closeDrawer();
   $("confirm").hidden = true;
   $("desktop").hidden = true;
   $("dock").hidden = true;
@@ -821,6 +848,7 @@ async function showDesktop() {
   buildDock();
   startRefresh();
   startWidgets();
+  startNotes();
   // A link (or reload) to #settings or #settings/<row> opens Settings there;
   // #store, the App Store.
   const match = location.hash.match(/^#settings(?:\/([\w-]+))?$/);

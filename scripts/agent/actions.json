@@ -92,6 +92,23 @@
       { "run": ["python3", "-I", "{homelab}/scripts/agent/apps.py", "restart", "{param:app}"] }
     ]
   },
+  "app-update": {
+    "label": "Updating",
+    "description": "Pulls the app's newest images and recreates its containers on them (docker compose pull, then up -d). Data stays.",
+    "params": { "app": { "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" } },
+    "steps": [
+      { "run": ["python3", "-I", "{homelab}/scripts/agent/apps.py", "update", "{param:app}"] }
+    ]
+  },
+  "app-logs": {
+    "label": "Reading logs",
+    "description": "The app's recent logs (docker compose logs), for its Logs view.",
+    "quiet": true,
+    "params": { "app": { "pattern": "^[a-z0-9][a-z0-9-]{0,63}$" } },
+    "steps": [
+      { "run": ["python3", "-I", "{homelab}/scripts/agent/apps.py", "logs", "{param:app}"], "result": true }
+    ]
+  },
   "app-delete": {
     "label": "Deleting",
     "admin": true,

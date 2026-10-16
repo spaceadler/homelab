@@ -19,7 +19,29 @@ const store = {
   checking: false,
   expanded: new Set(), // app ids showing their containers
   view: "apps", // or "import"
+  updates: null, // Set of images with a newer version (from Cup), or null
 };
+
+// Same spelling as the server's normalize_image: redis -> redis:latest.
+function normImage(ref) {
+  let r = String(ref || "").trim().replace(/^(index\.)?docker\.io\/(library\/)?/, "").replace(/^library\//, "");
+  const name = r.split("@")[0];
+  if (!r.includes("@") && !name.split("/").pop().includes(":")) r += ":latest";
+  return r;
+}
+
+async function checkUpdates() {
+  const { status, body } = await api("/api/updates").catch(() => ({ status: 0 }));
+  if (status === 200 && body?.checked) {
+    store.updates = new Set(body.images);
+    renderApps();
+  }
+}
+
+function hasUpdate(app) {
+  const s = store.status?.[app.id];
+  return Boolean(store.updates && s?.containers.some((c) => store.updates.has(normImage(c.image))));
+}
 
 const STATE_TEXT = {
   running: "Running",
@@ -38,6 +60,7 @@ const VERBS = {
   "app-delete": "Deleting",
   "app-forget": "Removing",
   "app-install": "Installing",
+  "app-update": "Updating",
 };
 
 // ------------------------------------------------------- open and close
@@ -55,6 +78,7 @@ function toggleStore() {
 function openStore() {
   closeSearch();
   closeMenu();
+  closeDrawer();
   if (isOpen("settings")) closeSettings();
   if (isOpen("usage")) closeUsage();
   const sheet = $("store");
@@ -67,6 +91,7 @@ function openStore() {
   store.view = "apps";
   renderStore();
   checkApps();
+  checkUpdates();
   clearInterval(store.timer);
   store.timer = setInterval(() => { if (!document.hidden) checkApps(); }, STORE_REFRESH_MS);
 }
@@ -178,6 +203,14 @@ async function appAction(app, action) {
     });
     if (!ok) return;
   }
+  if (action === "app-update") {
+    const ok = await confirmDialog({
+      title: `Update ${name}?`,
+      body: "It pulls the newest images and recreates its containers on them, so it's offline for a moment. Its data stays. Check the app's release notes first if you like (Cup links them).",
+      button: "Update",
+    });
+    if (!ok) return;
+  }
   if (action === "app-install" && !app.imported) {
     const ok = await confirmDialog({
       title: `Install ${name}?`,
@@ -200,7 +233,11 @@ async function appAction(app, action) {
     jobDialog(job, {});
   } else if (job) {
     const done = { "app-start": "started", "app-stop": "stopped", "app-restart": "restarted",
-      "app-delete": "deleted", "app-forget": "removed from adlerOS", "app-install": "installed" };
+      "app-delete": "deleted", "app-forget": "removed from adlerOS", "app-install": "installed", "app-update": "updated" };
+    if (action === "app-update") {
+      // What Cup knew is now out of date for this app.
+      for (const c of store.status?.[app.id]?.containers || []) store.updates?.delete(normImage(c.image));
+    }
     toast(`${name}: ${done[action]}.`);
     // These change what's installed: the desktop and both lists move it.
     if (["app-forget", "app-delete", "app-install"].includes(action)) await refresh();
@@ -278,8 +315,9 @@ function storeCard(app) {
   const s = store.status?.[app.id];
   const busy = store.busy[app.id];
   const st = busy ? "busy" : s ? s.state : "checking";
+  const update = !busy && hasUpdate(app);
   const label = busy ? `${VERBS[busy.action]}…` : s
-    ? (s.state === "partial" ? `Partly running (${s.containers.filter((c) => c.state === "running").length} of ${s.containers.length})` : STATE_TEXT[s.state] || s.state)
+    ? `${s.state === "partial" ? `Partly running (${s.containers.filter((c) => c.state === "running").length} of ${s.containers.length})` : STATE_TEXT[s.state] || s.state}${update ? " · Update available" : ""}`
     : store.error ? (app.up ? "Answering" : "Not answering") : "Checking…";
 
   const running = s && ["running", "partial", "restarting", "unhealthy"].includes(s.state);
@@ -292,6 +330,8 @@ function storeCard(app) {
     if (running && (!core || state.admin)) actions.append(button("Stop", "", () => appAction(app, "app-stop")));
     if (s && !running && s.state !== "no-compose") actions.append(button("Start", "primary", () => appAction(app, "app-start")));
     if (s && s.state !== "no-compose") actions.append(button("Restart", "", () => appAction(app, "app-restart")));
+    if (s && s.state !== "no-compose") actions.append(button("Update", update ? "primary" : "", () => appAction(app, "app-update")));
+    if (s?.containers.length) actions.append(button("Logs", "", () => logsDialog(app)));
     // Core apps (Pi-hole, Vaultwarden) are always installed.
     if (s && !core && state.admin) actions.append(button("Delete", "destructive", () => appAction(app, "app-delete")));
   }
@@ -322,6 +362,39 @@ function storeCard(app) {
     }
   }
   return card;
+}
+
+// ------------------------------------------------------------------ logs
+
+// The app's recent logs (docker compose logs, through the helper).
+async function logsDialog(app) {
+  const log = el("pre", { class: "job-log logs-text", tabindex: "0", "aria-label": `${app.name} logs` }, "Reading the logs…");
+  const note = el("p", { class: "job-note" });
+  const refresh = el("button", { type: "button", class: "button-secondary" }, "Refresh");
+  const close = el("button", { type: "button", class: "button-primary" }, "Close");
+  const dialog = el("div", { class: "dialog material job logs", role: "dialog", "aria-modal": "true" },
+    el("div", { class: "job-head" }, el("h2", {}, `${app.name} logs`)), note, log, el("div", { class: "dialog-actions" }, refresh, close));
+  close.addEventListener("click", closeModal);
+  const load = async () => {
+    refresh.disabled = true;
+    const { status, body } = await postAction("app-logs", { app: app.id });
+    if (status === 401) return showLock();
+    const job = status === 202 && body ? await waitForJob(body) : null;
+    refresh.disabled = false;
+    const r = job?.result;
+    if (!r || job.status === "failed" || r.error) {
+      log.textContent = "";
+      note.textContent = `Couldn't read the logs: ${r?.error || job?.error || "the helper didn't answer"}.`;
+      return;
+    }
+    log.textContent = r.lines.join("\n") || "(Nothing logged yet.)";
+    note.textContent = `The last ${r.lines.length} lines, newest at the bottom.`;
+    log.scrollTop = log.scrollHeight;
+  };
+  refresh.addEventListener("click", load);
+  openModal(dialog);
+  close.focus();
+  load();
 }
 
 // An app you can install: from the catalog, or one you imported and deleted.
