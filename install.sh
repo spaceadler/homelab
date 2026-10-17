@@ -315,6 +315,37 @@ fetch_adleros() {
     fi
 }
 
+# adlerOS's terminal host: only when ADLEROS_TERMINAL=on in homelab.env, and
+# removed again when it's off.
+install_terminal() {
+    local units=/etc/systemd/system tmp unit data=$CONTAINERS/core/os/data
+    case $(conf_get ADLEROS_TERMINAL) in
+    on | yes | true | 1) ;;
+    *)
+        if [ -e "$units/adleros-terminal.path" ]; then
+            sudo systemctl disable --now adleros-terminal.path adleros-terminal.service >/dev/null 2>&1 || true
+            sudo rm -f "$units/adleros-terminal.path" "$units/adleros-terminal.service"
+            sudo systemctl daemon-reload
+            info "terminal: off, and its host removed"
+        fi
+        return
+        ;;
+    esac
+    tmp=$(mktemp)
+    for unit in service path; do
+        # Single quotes on purpose: envsubst takes the names, not the values.
+        # shellcheck disable=SC2016
+        AGENT_USER=$USER AGENT_GROUP=$(id -gn) ADLEROS_DIR=$ADLEROS_DIR ADLEROS_DATA=$data HOMELAB_DIR=$HOMELAB_DIR \
+            envsubst '${AGENT_USER} ${AGENT_GROUP} ${ADLEROS_DIR} ${ADLEROS_DATA} ${HOMELAB_DIR}' \
+            <"$ADLEROS_DIR/agent/adleros-terminal.$unit.template" >"$tmp"
+        sudo install -m 0644 -o root -g root "$tmp" "$units/adleros-terminal.$unit"
+    done
+    rm -f "$tmp"
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now adleros-terminal.path >/dev/null 2>&1
+    info "terminal: on (admin mode and your password; log: journalctl -u adleros-terminal)"
+}
+
 install_agent() {
     step "Home screen helper"
     local lib=/usr/local/libexec/homelab adlib=/usr/local/libexec/adleros units=/etc/systemd/system tmp unit
@@ -354,6 +385,7 @@ install_agent() {
     rm -f "$tmp"
     sudo systemctl daemon-reload
     sudo systemctl enable --now homelab-agent.path >/dev/null 2>&1
+    install_terminal
     info "ready: settings, backups and updates from the home screen (log: journalctl -u homelab-agent)"
 }
 
