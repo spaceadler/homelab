@@ -338,8 +338,7 @@ adlerOS's **Settings** has the homelab's own rows too:
   also updates adlerOS, then a restart of adlerOS so it runs the new
   version), next to adlerOS's own: admin mode, restart, shut down, and the
   **Terminal** (a shell in a window: off unless `ADLEROS_TERMINAL=on` in
-  `homelab.env` and `./install.sh` re-run; admin mode and your password each
-  time).
+  `homelab.env` and `./install.sh` re-run, and only there in admin mode).
 
 **How the home screen changes things without being powerful.** adlerOS has
 no Docker or root access. For anything beyond its own settings it writes a
