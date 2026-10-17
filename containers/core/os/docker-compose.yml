@@ -32,6 +32,11 @@ services:
       OS_NAME: ${OS_NAME:-}
       OS_PORT: 8686
       TZ: ${TZ:?run ./install.sh}
+      # Files' places as they are on this machine: Root is this homelab, its
+      # mailbox/ the Desktop, STORAGE_DIR the User folder.
+      ADLEROS_HOST_ROOT: ${HOMELAB_DIR:?run ./install.sh}
+      ADLEROS_HOST_DESKTOP: ${HOMELAB_DIR:?run ./install.sh}/mailbox
+      ADLEROS_HOST_STORAGE: ${STORAGE_DIR:?run ./install.sh}
       PYTHONDONTWRITEBYTECODE: 1
     volumes:
       # adlerOS itself, fetched by install.sh from its own repository.
@@ -56,8 +61,13 @@ services:
       # last backup ran, and which OS this is.
       - ../../../scripts/agent:/homelab/agent:ro
       - ../../../backup:/homelab/backup:ro
-      # Your files, read-write, for adlerOS's Files window.
+      # Your files, read-write, for adlerOS's Files window: User, and the
+      # mailbox as its Desktop.
       - ${STORAGE_DIR:?run ./install.sh}:/storage
+      - ../../../mailbox:/places/desktop
+      # The whole homelab as Files' Root, read-only: changing it goes through
+      # the helper, in admin mode, and only with ADLEROS_TERMINAL=on.
+      - ../../..:/places/root:ro
       - /etc/os-release:/host/os-release:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8686/healthz', timeout=3)"]

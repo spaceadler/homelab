@@ -202,6 +202,10 @@ This workflow is especially powerful if you use Agentic AIs. You can store your 
 ### Staging in the mailbox
 The `mailbox/` folder is designed to act like a physical inbox on a desk. When you are in a hurry and have files or folders that you don't have time to properly sort yet, drop them into the mailbox. This prevents you from cluttering up your meticulously organized `storage` arrays with unsorted data. You can come back later, think it over, and move them to their permanent homes.
 
+adlerOS shows the mailbox as the **Desktop** in Files, and in desktop mode on
+the desktop itself: whatever Syncthing drops there appears as an icon. Sorting
+it is cut on the Desktop, paste in User (your storage).
+
 ### Notes
 `storage/Notes` is a plain folder of Markdown files. Globnotes
 (`notes.homelab.local`) edits it in the browser, and because it's just

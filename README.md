@@ -97,11 +97,14 @@ A request for `http://gallery.homelab.local` takes three hops:
 widgets, your apps as icons on one page per collection (the folders under
 `containers/`: Media, Knowledge, Life…; imported apps are on the last page,
 **Extras**), a dock of the apps you pin, **All apps**, search (⌘K or `/`),
-notifications, **Files** (your storage folder, with a text editor), and an
+notifications, **Files** (your `mailbox/` as its Desktop, your storage
+folder, and this homelab itself read-only, with a text editor), and an
 **App Store** that installs, starts, stops, updates and deletes apps and shows
 their logs. **Live Usage** charts the machine and
 every app's share; **Settings** changes the domain and timezone, backs up and
-updates the homelab. It all works from a keyboard alone (press `?`).
+updates the homelab. It all works from a keyboard alone (press `?`). On a
+computer, **desktop mode** puts windows side by side and the mailbox on the
+desktop.
 
 adlerOS is its own project: `install.sh` fetches it into
 `containers/core/os/adleros/` and keeps it updated, so this repository only
