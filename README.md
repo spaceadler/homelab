@@ -97,8 +97,9 @@ A request for `http://gallery.homelab.local` takes three hops:
 widgets, your apps as icons on one page per collection (the folders under
 `containers/`: Media, Knowledge, Life…; imported apps are on the last page,
 **Extras**), a dock of the apps you pin, **All apps**, search (⌘K or `/`),
-notifications, and an **App Store** that installs, starts, stops, updates and
-deletes apps and shows their logs. **Live Usage** charts the machine and
+notifications, **Files** (your storage folder, with a text editor), and an
+**App Store** that installs, starts, stops, updates and deletes apps and shows
+their logs. **Live Usage** charts the machine and
 every app's share; **Settings** changes the domain and timezone, backs up and
 updates the homelab. It all works from a keyboard alone (press `?`).
 

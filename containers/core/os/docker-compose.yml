@@ -56,6 +56,8 @@ services:
       # last backup ran, and which OS this is.
       - ../../../scripts/agent:/homelab/agent:ro
       - ../../../backup:/homelab/backup:ro
+      # Your files, read-write, for adlerOS's Files window.
+      - ${STORAGE_DIR:?run ./install.sh}:/storage
       - /etc/os-release:/host/os-release:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8686/healthz', timeout=3)"]
