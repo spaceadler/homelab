@@ -37,6 +37,8 @@ services:
       ADLEROS_HOST_ROOT: ${HOMELAB_DIR:?run ./install.sh}
       ADLEROS_HOST_DESKTOP: ${HOMELAB_DIR:?run ./install.sh}/mailbox
       ADLEROS_HOST_STORAGE: ${STORAGE_DIR:?run ./install.sh}
+      # Who it answers, besides ufw: your tailnet (and this machine's nginx).
+      ADLEROS_NETWORKS: ${ADLEROS_NETWORKS:-tailscale}
       PYTHONDONTWRITEBYTECODE: 1
     volumes:
       # adlerOS itself, fetched by install.sh from its own repository.
