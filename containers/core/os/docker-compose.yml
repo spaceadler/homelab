@@ -1,5 +1,5 @@
 # adlerOS, the home screen, at os.<DOMAIN> (the bare domain redirects here).
-# adlerOS has its own repository (https://git.spaceadler.com/spaceadler/adleros);
+# adlerOS has its own repository (https://github.com/spaceadler/adleros);
 # install.sh keeps a copy in ./adleros and runs it here in homelab mode: your
 # apps come from containers/catalog.tsv, one page per collection, and the
 # App Store installs and deletes them through install.sh. Its own README is
@@ -17,9 +17,9 @@ services:
     container_name: homelab-os
     restart: unless-stopped
     user: ${PUID:?run ./install.sh}:${PGID:?run ./install.sh}
-    # Host network: it checks each app at 127.0.0.1:<port> (the only address
-    # Vaultwarden answers on), and port 8686 is guarded by ufw like any other
-    # host service: open on tailscale0, closed on the LAN.
+    # Host network: it checks each app at TS_IP:<port> (Vaultwarden, bound to
+    # loopback, at its HTTPS name), and port 8686 is guarded by ufw like any
+    # other host service: open on tailscale0, closed on the LAN.
     network_mode: host
     read_only: true
     cap_drop: [ALL]
@@ -32,6 +32,8 @@ services:
       OS_NAME: ${OS_NAME:-}
       OS_PORT: 8686
       TZ: ${TZ:?run ./install.sh}
+      # This machine's Tailscale address, for the health check below.
+      TS_IP: ${TS_IP:?run ./install.sh}
       # Files' places as they are on this machine: Root is this homelab, its
       # mailbox/ the Desktop, STORAGE_DIR the User folder.
       ADLEROS_HOST_ROOT: ${HOMELAB_DIR:?run ./install.sh}
@@ -72,7 +74,7 @@ services:
       - ../../..:/places/root:ro
       - /etc/os-release:/host/os-release:ro
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8686/healthz', timeout=3)"]
+      test: ["CMD", "python", "-c", "import os, urllib.request as u; u.urlopen('http://' + os.environ['TS_IP'] + ':8686/healthz', timeout=3)"]
       interval: 30s
       timeout: 5s
       retries: 3

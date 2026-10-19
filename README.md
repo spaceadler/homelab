@@ -25,8 +25,9 @@ cd ~/homelab && ./install.sh
 apps you want, generates every password, and starts them. Afterwards,
 `http://homelab.local` opens your **home screen**, adlerOS, styled after
 umbrelOS: your apps as icons over a wallpaper, one page per collection,
-with widgets, search, a dock and an App Store, behind a password. It's safe
-to run
+with widgets, search, a dock and an App Store, behind a password. adlerOS
+is optional (`--no-adleros`, or say no when it asks): without it, the
+homelab is the same, minus the home screen. It's safe to run
 again whenever you like: that's also how you add apps and apply updates. The
 **[How-to-Use Guide](how-to-use.md)** walks through a first install step by
 step.
@@ -93,7 +94,7 @@ A request for `http://gallery.homelab.local` takes three hops:
 ([details](docs/tls.md)).
 
 **The home screen is the front door.** `http://homelab.local` (or
-`os.homelab.local`) opens **[adlerOS](https://git.spaceadler.com/spaceadler/adleros)**, styled after umbrelOS:
+`os.homelab.local`) opens **[adlerOS](https://github.com/spaceadler/adleros)**, styled after umbrelOS:
 widgets, your apps as icons on one page per collection (the folders under
 `containers/`: Media, Knowledge, Life…; imported apps are on the last page,
 **Extras**), a dock of the apps you pin, **All apps**, search (⌘K or `/`),
@@ -107,11 +108,15 @@ computer, **desktop mode** puts windows side by side and the mailbox on the
 desktop.
 
 adlerOS is its own project: `install.sh` fetches it into
-`containers/core/os/adleros/` and keeps it updated, so this repository only
-holds how the homelab runs it. Its docs: [the guide](https://git.spaceadler.com/spaceadler/adleros/src/branch/main/docs/guide.md),
-[keyboard](https://git.spaceadler.com/spaceadler/adleros/src/branch/main/docs/keyboard.md),
-[customizing](https://git.spaceadler.com/spaceadler/adleros/src/branch/main/docs/customizing.md) (wallpapers, dock
-icons, widgets, settings) and [security](https://git.spaceadler.com/spaceadler/adleros/src/branch/main/docs/security.md).
+`containers/core/os/adleros/` (from GitHub, else the Gitea it's pushed to)
+and keeps it updated, so this repository only holds how the homelab runs
+it. It also runs adlerOS's own installer, which asks adlerOS's questions
+(your name) and, once the apps are up, connects adlerOS's Music, Gallery
+and Documents to Navidrome, Immich and Paperless: Documents by itself, the
+other two with your login (making their admin, if they have none yet). Its docs: [the guide](https://github.com/spaceadler/adleros/blob/main/docs/guide.md),
+[keyboard](https://github.com/spaceadler/adleros/blob/main/docs/keyboard.md),
+[customizing](https://github.com/spaceadler/adleros/blob/main/docs/customizing.md) (wallpapers, dock
+icons, widgets, settings) and [security](https://github.com/spaceadler/adleros/blob/main/docs/security.md).
 It has no access to Docker; it runs as your user, read-only, with no
 capabilities, behind its own password (`OS_PASSWORD` in
 `containers/core/os/.env`).
@@ -324,6 +329,13 @@ read the changelogs first.
 - **`--no-host`** skips installing packages and the firewall, for a machine
   that's already set up. **`--no-start`** writes the config without
   starting anything.
+- **`--no-adleros`** sets the homelab up without adlerOS (and without its
+  helper): `ADLEROS=off` in `homelab.env`, which later runs keep. The bare
+  domain then goes to Glance, if you have it. `ADLEROS=on` and
+  `./install.sh` adds adlerOS back.
+- **adlerOS comes from GitHub,** and from `ADLEROS_MIRRORS` (the Gitea it's
+  pushed to, by default) when GitHub can't be reached; `ADLEROS_REPO` and
+  `ADLEROS_REF` pick another copy or version.
 
 ### Settings and the helper
 
@@ -371,7 +383,7 @@ Even a compromised home screen could only ask for one of those actions.
 
 **Adding a setting:** an action in `scripts/agent/actions.json` (if it needs
 to change the machine) and a row in adlerOS's settings catalog; see adlerOS's
-[customizing](https://git.spaceadler.com/spaceadler/adleros/src/branch/main/docs/customizing.md#settings-rows).
+[customizing](https://github.com/spaceadler/adleros/blob/main/docs/customizing.md#settings-rows).
 
 ### The App Store
 
@@ -396,7 +408,7 @@ if you'd typed `docker compose` there. Here:
   take the App Store down with it.
 
 **Importing apps you already run** (*Import apps…*) works as in
-[adlerOS's guide](https://git.spaceadler.com/spaceadler/adleros/src/branch/main/docs/guide.md#importing-apps-adleros-didnt-find).
+[adlerOS's guide](https://github.com/spaceadler/adleros/blob/main/docs/guide.md#importing-apps-adleros-didnt-find).
 Imported apps are recorded in `containers/extras/<app>/app.json`, pointing at
 your compose file; a known app (Jellyfin, say) goes in its collection, the
 rest in **Extras**. Their data lives wherever their compose files keep it, so
@@ -411,7 +423,8 @@ Do that before you share your tailnet with anyone. The exceptions:
 | App | First login |
 | --- | --- |
 | Vaultwarden | Sign-ups are off. Open `/admin` with `VAULTWARDEN_ADMIN_TOKEN` from its `.env`, invite your email, then register with it. Afterwards, empty the token in `.env` and `docker compose up -d` to close `/admin`. |
-| Home screen | `OS_PASSWORD`, in `containers/core/os/.env`. Change it in Settings → Password; from then on, the changed one counts. |
+| Home screen | `OS_PASSWORD`, in `containers/core/os/.env` (the first run's summary shows it). Change it in Settings → Password; from then on, the changed one counts. |
+| Immich, Navidrome | The first account is the admin. `install.sh` offers to make it for you (in a terminal), and with it the login or key adlerOS's Gallery and Music use. |
 | Pi-hole | `PIHOLE_PASSWORD` |
 | Paperless-ngx | `PAPERLESS_ADMIN_USER` / `PAPERLESS_ADMIN_PASSWORD` |
 | File Browser | `admin` / `FILEBROWSER_ADMIN_PASSWORD` (reset to this on every start, so change it in `.env`) |
@@ -686,7 +699,7 @@ The Pi-specific preparation (USB boot, zram and swap) is in the
 
 ## Credits
 
-- **Home screen:** [adlerOS](https://git.spaceadler.com/spaceadler/adleros), which credits its design (after
+- **Home screen:** [adlerOS](https://github.com/spaceadler/adleros), which credits its design (after
   umbrelOS, reimplemented, no umbrelOS code or artwork), its font (Inter,
   SIL OFL) and its wallpapers (NASA, public domain).
 - **App icons:** fetched at runtime from

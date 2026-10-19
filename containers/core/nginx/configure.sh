@@ -30,3 +30,21 @@ else
     printf '# HTTP mode (written by configure.sh; see docs/tls.md for HTTPS).\nlisten 80;\n' \
         >snippets/listen.conf
 fi
+
+# The bare domain goes to the home screen: adlerOS, or without it Glance's
+# dashboard; with neither, it's refused like any name that isn't an app.
+case " $HOMELAB_APPS " in
+*" os "*) home=os ;;
+*" glance "*) home=home ;;
+*) home="" ;;
+esac
+if [ "$home" != os ]; then
+    if [ -n "$home" ]; then
+        to="return 302 $URL_SCHEME://$home.$DOMAIN\$request_uri;"
+    else
+        to="return 444;"
+    fi
+    tmp=$(mktemp)
+    TO="$to" awk -v os="://os.$DOMAIN" 'index($0, os) && /return 302/ { sub(/return 302 .*/, ENVIRON["TO"]) } { print }' homelab.conf >"$tmp"
+    cat "$tmp" >homelab.conf && rm -f "$tmp"
+fi

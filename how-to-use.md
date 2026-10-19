@@ -66,6 +66,8 @@ cd ~/homelab
 
 It works through these steps, printing what it's doing as it goes:
 
+0. **adlerOS:** asks whether you want the home screen (yes, unless you say
+   no), and fetches it.
 1. **Packages:** installs Docker (from Docker's own repository) and
    Tailscale.
 2. **Tailscale:** prints a login link. Open it and add this machine to your
@@ -81,15 +83,21 @@ It works through these steps, printing what it's doing as it goes:
 5. **The app menu:** Nginx, Pi-hole and Vaultwarden are always included.
    Tick what you want with Space, then press Enter. The list, with what
    each app does, is in the [README](README.md#the-apps-and-their-addresses).
-6. **Setup and start:** generates every password, writes the configs and
-   starts the apps.
+6. **Setup and start:** generates every password, writes the configs, asks
+   your first name (adlerOS's installer, for its greeting) and starts the
+   apps.
+7. **Connecting adlerOS's apps:** Documents to Paperless by itself; for
+   Immich and Navidrome it offers to make your admin account (they have
+   none yet), and with it the key adlerOS's Gallery and Music use. Say no
+   and make them later, in each app, or by running `./install.sh` again.
 
 The first run downloads every image, so expect anything from five minutes
 to an hour on a Pi, depending on what you picked and your connection.
 Nomie builds from source and CryptPad downloads OnlyOffice on first start;
 those two are the slowest.
 
-It finishes with a table of every app's address, and three next steps.
+It finishes with a table of every app's address, the home screen's
+password (this once), and three next steps.
 
 ## 3. Point your tailnet at Pi-hole
 
@@ -111,7 +119,7 @@ So that `gallery.homelab.local` means something to your phone:
 Now open `http://homelab.local` from your phone (with Tailscale on). That's
 your home screen: every app you installed, over a wallpaper, with a dock
 and search (⌘K). An app that doesn't respond shows as *Offline*. Its
-password is `OS_PASSWORD`:
+password is the one the summary showed, `OS_PASSWORD`:
 
 ```bash
 grep OS_PASSWORD ~/homelab/containers/core/os/.env

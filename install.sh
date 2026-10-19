@@ -6,6 +6,7 @@
 #   ./install.sh --apps "immich memos"   no menu; core apps are always included
 #   ./install.sh --no-host               skip packages, Tailscale and firewall
 #   ./install.sh --no-start              write config only, start nothing
+#   ./install.sh --no-adleros            the homelab on its own, no home screen
 #   ./install.sh --yes                   take every default, never prompt
 #
 # Safe to re-run, and meant to be: after `git pull`, after editing
@@ -22,7 +23,9 @@ CONFIG="$HOMELAB_DIR/homelab.env"
 SITES="$CONTAINERS/core/nginx/sites"
 # adlerOS, the home screen, has its own repository; install.sh keeps a copy here.
 ADLEROS_DIR="$CONTAINERS/core/os/adleros"
-ADLEROS_REPO_DEFAULT="https://git.spaceadler.com/spaceadler/adleros.git"
+ADLEROS_REPO_DEFAULT="https://github.com/spaceadler/adleros.git"
+# Tried in turn when the one before can't be reached: the Gitea it's pushed to.
+ADLEROS_MIRRORS_DEFAULT="https://git.spaceadler.com/spaceadler/adleros.git"
 STORAGE_SUBDIRS=(Documents Downloads Files Gallery Inbox Notes
     Media/Audiobooks Media/Books Media/Kiwix Media/Music Media/Podcasts
     Media/Recordings Media/Screenshots)
@@ -30,6 +33,7 @@ STORAGE_SUBDIRS=(Documents Downloads Files Gallery Inbox Notes
 GLOBAL_KEYS=(DOMAIN TZ PUID PGID HOMELAB_DIR STORAGE_DIR TS_IP VAULT_HOST URL_SCHEME)
 
 DO_HOST=1 DO_START=1 ASSUME_YES=0 CLI_APPS="" HAVE_APPS_FLAG=0
+ADLEROS_FLAG="" ADLEROS_ON=1 OS_ENV_NEW=0
 DOCKER="docker" GROUP_ADDED=0
 declare -A GENRE SUB PORT NAME ABOUT GLOBALS
 ORDER=() SELECTED=() SKIPPED=() FAILED=()
@@ -292,34 +296,84 @@ free_dns_port() {
 # the fixed list in scripts/agent/actions.json. The home screen itself never
 # gets Docker or root access. Root-only steps go through sudo to root-owned
 # copies of two scripts, and the sudoers rule allows exactly those.
-# fetch_adleros: get adlerOS (or update it) into containers/core/os/adleros.
-# ADLEROS_REPO and ADLEROS_REF in homelab.env pick another copy or version.
+# adlerOS, the home screen, or the homelab on its own: ADLEROS in homelab.env
+# (--no-adleros sets it off), else asked on the first run. A homelab from
+# before this setting has adlerOS, so it keeps it.
+choose_adleros() {
+    case ${ADLEROS_FLAG:-$(conf_get ADLEROS)} in
+    off | no | false | 0) ADLEROS_ON=0 ;;
+    on | yes | true | 1) ADLEROS_ON=1 ;;
+    *)
+        ADLEROS_ON=1
+        if [ ! -f "$CONFIG" ]; then
+            confirm "Install adlerOS, the home screen (your apps, files and settings in the browser)?" || ADLEROS_ON=0
+        fi
+        ;;
+    esac
+}
+
+# fetch_adleros: get adlerOS (or update it) into containers/core/os/adleros,
+# from ADLEROS_REPO (else GitHub), then each of ADLEROS_MIRRORS in turn if
+# that can't be reached. ADLEROS_REF picks another version.
 fetch_adleros() {
     step "adlerOS (the home screen)"
-    local repo ref
+    choose_adleros
+    if [ $ADLEROS_ON = 0 ]; then
+        info "off: the homelab on its own (ADLEROS=on in homelab.env, then ./install.sh, adds it)"
+        return
+    fi
+    local repo ref mirrors url urls
     repo=$(conf_get ADLEROS_REPO)
-    repo=${repo:-$ADLEROS_REPO_DEFAULT}
+    mirrors=$(conf_get ADLEROS_MIRRORS)
+    if [ -z "$repo" ]; then repo=$ADLEROS_REPO_DEFAULT mirrors=${mirrors:-$ADLEROS_MIRRORS_DEFAULT}; fi
+    read -ra urls <<<"$repo $mirrors"
     ref=$(conf_get ADLEROS_REF)
     ref=${ref:-main}
     if [ -d "$ADLEROS_DIR/.git" ]; then
-        if git -C "$ADLEROS_DIR" fetch -q --depth 1 origin "$ref" && git -C "$ADLEROS_DIR" checkout -q --detach FETCH_HEAD; then
-            info "up to date: $ref ($(git -C "$ADLEROS_DIR" rev-parse --short HEAD))"
-        else
-            warn "couldn't update adlerOS from $repo; keeping the copy you have"
-        fi
+        for url in "${urls[@]}"; do
+            if GIT_TERMINAL_PROMPT=0 git -C "$ADLEROS_DIR" fetch -q --depth 1 "$url" "$ref" 2>/dev/null; then
+                if git -C "$ADLEROS_DIR" checkout -q --detach FETCH_HEAD 2>/dev/null; then
+                    info "up to date: $ref from $url ($(git -C "$ADLEROS_DIR" rev-parse --short HEAD))"
+                else
+                    warn "kept your copy: it has changes of its own (git -C ${ADLEROS_DIR#"$HOMELAB_DIR"/} status)"
+                fi
+                return
+            fi
+            info "couldn't reach $url"
+        done
+        warn "couldn't update adlerOS from any of those; keeping the copy you have"
     elif [ -e "$ADLEROS_DIR/app/server.py" ]; then
         info "using the copy in ${ADLEROS_DIR#"$HOMELAB_DIR"/} (not a git checkout, so not updated)"
     else
-        git clone -q --depth 1 --branch "$ref" "$repo" "$ADLEROS_DIR" || die "couldn't fetch adlerOS from $repo"
-        info "fetched $ref from $repo"
+        for url in "${urls[@]}"; do
+            if GIT_TERMINAL_PROMPT=0 git clone -q --depth 1 --branch "$ref" "$url" "$ADLEROS_DIR" 2>/dev/null; then
+                info "fetched $ref from $url"
+                return
+            fi
+            info "couldn't reach $url"
+        done
+        die "couldn't fetch adlerOS from any of those (./install.sh --no-adleros sets up the homelab without it)"
     fi
+}
+
+# adlerOS's own installer, in homelab mode: its questions (your name) before
+# the apps start, and once they're up (--connect), Music, Gallery and
+# Documents' connections to Navidrome, Immich and Paperless.
+adleros_installer() {
+    [ $ADLEROS_ON = 1 ] || return 0
+    local args=(--homelab "$HOMELAB_DIR" "$@")
+    [ "$ASSUME_YES" = 1 ] && args+=(--yes)
+    bash "$ADLEROS_DIR/install.sh" "${args[@]}" ||
+        warn "adlerOS's installer stopped${1:+ ($1)}; ./install.sh again carries on"
 }
 
 # adlerOS's terminal host: only when ADLEROS_TERMINAL=on in homelab.env, and
 # removed again when it's off.
 install_terminal() {
-    local units=/etc/systemd/system tmp unit data=$CONTAINERS/core/os/data
-    case $(conf_get ADLEROS_TERMINAL) in
+    local units=/etc/systemd/system tmp unit data=$CONTAINERS/core/os/data terminal
+    terminal=$(conf_get ADLEROS_TERMINAL)
+    [ $ADLEROS_ON = 1 ] || terminal=off # it's adlerOS's
+    case $terminal in
     on | yes | true | 1) ;;
     *)
         if [ -e "$units/adleros-terminal.path" ]; then
@@ -349,6 +403,20 @@ install_terminal() {
 install_agent() {
     step "Home screen helper"
     local lib=/usr/local/libexec/homelab adlib=/usr/local/libexec/adleros units=/etc/systemd/system tmp unit
+    # It's adlerOS's (its agent.py, for what the home screen asks): none
+    # without it, and gone again when adlerOS is switched off.
+    if [ $ADLEROS_ON = 0 ]; then
+        if [ -e "$units/homelab-agent.path" ]; then
+            sudo systemctl disable --now homelab-agent.path homelab-agent.service >/dev/null 2>&1 || true
+            sudo rm -f "$units/homelab-agent.path" "$units/homelab-agent.service" /etc/sudoers.d/homelab
+            sudo systemctl daemon-reload
+            info "off with adlerOS: its units and sudo rule removed"
+        else
+            info "none: it's adlerOS's, and adlerOS is off"
+        fi
+        install_terminal
+        return
+    fi
     if [[ $HOMELAB_DIR =~ [[:space:]\|\&\\] ]]; then
         warn "this folder's path has a space or one of | & \\; move it for the home screen's helper to work"
         return
@@ -436,6 +504,7 @@ configure_globals() {
         vault_host=vault.$domain
     fi
 
+    env_file_set "$CONFIG" ADLEROS "$([ $ADLEROS_ON = 1 ] && echo on || echo off)"
     GLOBALS=([DOMAIN]=$domain [TZ]=$tz [PUID]=${puid:-$(id -u)} [PGID]=${pgid:-$(id -g)}
         [HOMELAB_DIR]=$HOMELAB_DIR [STORAGE_DIR]=$storage [TS_IP]=$ts_ip [VAULT_HOST]=$vault_host
         [URL_SCHEME]=$scheme)
@@ -461,7 +530,7 @@ app_menu() {
         height=$((rows < 44 ? rows - 2 : 42))
         list=$((height - 9))
         whiptail --title "Homelab apps" --separate-output --checklist \
-            "Nginx, Pi-hole and Vaultwarden are always installed. Space toggles, Enter confirms." \
+            "Nginx, Pi-hole and Vaultwarden are always installed$([ $ADLEROS_ON = 1 ] && echo ', and adlerOS'). Space toggles, Enter confirms." \
             "$height" 110 "$list" "${args[@]}" 3>&1 1>&2 2>&3 </dev/tty | tr '\n' ' '
         return
     fi
@@ -499,6 +568,7 @@ select_apps() {
     done
     for a in "${ORDER[@]}"; do
         if [ "${GENRE[$a]}" = core ]; then
+            [ "$a" = os ] && [ $ADLEROS_ON = 0 ] && continue
             SELECTED+=("$a")
         elif [[ " $wanted " == *" $a "* ]]; then
             SELECTED+=("$a")
@@ -580,7 +650,14 @@ render_templates() {
         # every file: some are read by an unprivileged user in the container
         # (CryptPad's config.js has *public* admin keys, so no "KEY" here).
         if grep -qE '\$\{[A-Z_]*(PASS|SECRET|TOKEN)[A-Z_]*\}' "$f"; then chmod 600 "$out.tmp"; fi
-        mv -f "$out.tmp" "$out"
+        # In place when it's there: a container that mounts this one file
+        # (nginx's homelab.conf) would go on seeing a replaced file's old copy.
+        if [ -f "$out" ] && [ -w "$out" ]; then
+            chmod --reference="$out.tmp" "$out" 2>/dev/null || true
+            cat "$out.tmp" >"$out" && rm -f "$out.tmp"
+        else
+            mv -f "$out.tmp" "$out"
+        fi
     # Only the app folder itself: its data folders are the app's business.
     done < <(find "$dir" -maxdepth 1 -name '*.template' -print0)
 }
@@ -660,10 +737,18 @@ summary() {
     done
     [ ${#SKIPPED[@]} -eq 0 ] || warn "not started (see messages above): ${SKIPPED[*]}"
     [ ${#FAILED[@]} -eq 0 ] || warn "failed: ${FAILED[*]}"
+    if [ $ADLEROS_ON = 1 ]; then
+        echo
+        echo "    Home screen: ${GLOBALS[URL_SCHEME]}://os.$d (or http://$ip:8686)"
+        if [ $OS_ENV_NEW = 1 ]; then
+            echo "    Password:    $(sed -n 's/^OS_PASSWORD=//p' "$(app_dir os)/.env" | tail -n1)   (OS_PASSWORD in containers/core/os/.env; change it in Settings)"
+        else
+            echo "    Password:    OS_PASSWORD in containers/core/os/.env"
+        fi
+    elif $DOCKER ps --format '{{.Names}}' 2>/dev/null | grep -qx homelab-os; then
+        warn "adlerOS is off but still running: cd containers/core/os && docker compose down stops it"
+    fi
     cat <<EOF
-
-    Home screen: ${GLOBALS[URL_SCHEME]}://os.$d (or http://$ip:8686), with the password
-    OS_PASSWORD from containers/core/os/.env.
 
     Next steps
     1. Names: Tailscale admin console → DNS (https://login.tailscale.com/admin/dns)
@@ -693,8 +778,9 @@ main() {
         --apps=*) CLI_APPS=${1#*=} HAVE_APPS_FLAG=1 && shift ;;
         --no-host) DO_HOST=0 && shift ;;
         --no-start) DO_START=0 && shift ;;
+        --no-adleros) ADLEROS_FLAG=off && shift ;;
         -y | --yes) ASSUME_YES=1 && shift ;;
-        -h | --help) sed -n '2,14p' "$0" | sed -E 's/^# ?//' && exit 0 ;;
+        -h | --help) sed -n '2,15p' "$0" | sed -E 's/^# ?//' && exit 0 ;;
         *) die "unknown option '$1' (see --help)" ;;
         esac
     done
@@ -719,15 +805,18 @@ main() {
     make_storage
 
     step "Configuring ${#SELECTED[@]} apps"
+    [ -f "$(app_dir os)/.env" ] || OS_ENV_NEW=1 # its password is shown at the end, this once
     mkdir -p "$SITES"
     find "$SITES" -maxdepth 1 -name '*.conf' -delete # regenerated just below
     for a in "${SELECTED[@]}"; do configure_app "$a"; done
     info "done: .env, rendered configs and nginx sites written"
+    adleros_installer
 
     if [ $DO_START = 1 ]; then
         step "Starting"
         for a in "${SELECTED[@]}"; do start_app "$a"; done
         reload_nginx
+        adleros_installer --connect
     fi
     summary
 }
