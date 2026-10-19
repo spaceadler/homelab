@@ -3,7 +3,7 @@ server {
     include snippets/listen.conf;
     server_name timeline.*;
     location / {
-        proxy_pass http://127.0.0.1:3001;
+        proxy_pass http://${TS_IP}:3001;
         include snippets/proxy.conf;
     }
 }

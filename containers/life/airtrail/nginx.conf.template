@@ -1,9 +1,9 @@
-# Cup → http://cup.<domain>
+# AirTrail → http://fly.<domain>
 server {
     include snippets/listen.conf;
-    server_name cup.*;
+    server_name fly.*;
     location / {
-        proxy_pass http://127.0.0.1:9898;
+        proxy_pass http://${TS_IP}:9478;
         include snippets/proxy.conf;
     }
 }

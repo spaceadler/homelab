@@ -1,9 +1,9 @@
-# BookStack → http://books.<domain>
+# 4get → http://search.<domain>
 server {
     include snippets/listen.conf;
-    server_name books.*;
+    server_name search.*;
     location / {
-        proxy_pass http://127.0.0.1:6875;
+        proxy_pass http://${TS_IP}:9364;
         include snippets/proxy.conf;
     }
 }

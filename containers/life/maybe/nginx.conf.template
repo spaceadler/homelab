@@ -1,9 +1,9 @@
-# Gitea → http://git.<domain>
+# Maybe → http://budget.<domain>
 server {
     include snippets/listen.conf;
-    server_name git.*;
+    server_name budget.*;
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://${TS_IP}:13400;
         include snippets/proxy.conf;
     }
 }

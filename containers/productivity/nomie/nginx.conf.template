@@ -3,7 +3,7 @@ server {
     include snippets/listen.conf;
     server_name track.*;
     location / {
-        proxy_pass http://127.0.0.1:5005;
+        proxy_pass http://${TS_IP}:5005;
         include snippets/proxy.conf;
     }
 }
@@ -12,7 +12,7 @@ server {
     include snippets/listen.conf;
     server_name trackdb.*;
     location / {
-        proxy_pass http://127.0.0.1:5984;
+        proxy_pass http://${TS_IP}:5984;
         include snippets/proxy.conf;
     }
 }

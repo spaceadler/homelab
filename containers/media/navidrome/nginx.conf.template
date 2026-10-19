@@ -1,9 +1,9 @@
-# Maybe → http://budget.<domain>
+# Navidrome → http://music.<domain>
 server {
     include snippets/listen.conf;
-    server_name budget.*;
+    server_name music.*;
     location / {
-        proxy_pass http://127.0.0.1:13400;
+        proxy_pass http://${TS_IP}:4533;
         include snippets/proxy.conf;
     }
 }

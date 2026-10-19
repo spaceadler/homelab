@@ -1,9 +1,9 @@
-# Navidrome → http://music.<domain>
+# Radicale → http://cal.<domain>
 server {
     include snippets/listen.conf;
-    server_name music.*;
+    server_name cal.*;
     location / {
-        proxy_pass http://127.0.0.1:4533;
+        proxy_pass http://${TS_IP}:5222;
         include snippets/proxy.conf;
     }
 }

@@ -1,9 +1,9 @@
-# Syncthing → http://sync.<domain>
+# Pi-hole → http://dns.<domain>/admin
 server {
     include snippets/listen.conf;
-    server_name sync.*;
+    server_name dns.*;
     location / {
-        proxy_pass http://127.0.0.1:8384;
+        proxy_pass http://${TS_IP}:8081;
         include snippets/proxy.conf;
     }
 }

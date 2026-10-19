@@ -1,9 +1,9 @@
-# Stremio → http://watch.<domain>
+# Syncthing → http://sync.<domain>
 server {
     include snippets/listen.conf;
-    server_name watch.*;
+    server_name sync.*;
     location / {
-        proxy_pass http://127.0.0.1:5543;
+        proxy_pass http://${TS_IP}:8384;
         include snippets/proxy.conf;
     }
 }
