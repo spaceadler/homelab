@@ -107,13 +107,21 @@ updates the homelab. It all works from a keyboard alone (press `?`). On a
 computer, **desktop mode** puts windows side by side and the mailbox on the
 desktop.
 
-adlerOS is its own project: `install.sh` fetches it into
-`containers/core/os/adleros/` (from GitHub, else the Gitea it's pushed to)
-and keeps it updated, so this repository only holds how the homelab runs
-it. It also runs adlerOS's own installer, which asks adlerOS's questions
-(your name) and, once the apps are up, connects adlerOS's Music, Gallery
-and Documents to Navidrome, Immich and Paperless: Documents by itself, the
-other two with your login (making their admin, if they have none yet). Its docs: [the guide](https://github.com/spaceadler/adleros/blob/main/docs/guide.md),
+**adlerOS is its own project, and none of it lives here.** This repository
+is the homelab: the machine's setup, the apps and their recipes. adlerOS
+(the code, and how it runs in a homelab) is all in
+[its own repository](https://github.com/spaceadler/adleros), one codebase
+for both ways it's used: over a homelab you built yourself, or as this
+homelab's home screen. All `install.sh` does about it is fetch it into
+`containers/core/os/adleros/` (from GitHub, else the Gitea it's pushed to),
+keep it updated, and run *its* installer with `--homelab ~/homelab`, which
+tells it where it is. That installer does everything of adlerOS's: your
+name, its password, its container in `containers/core/os/` (all of that
+folder is written by it, none of it committed here), its address
+`os.<domain>`, its helper, the terminal if you want one, and, once the apps
+are up, connecting adlerOS's Music, Gallery and Documents to Navidrome,
+Immich and Paperless (Documents by itself, the other two with your login,
+making their admin if they have none yet). Its docs: [the guide](https://github.com/spaceadler/adleros/blob/main/docs/guide.md),
 [keyboard](https://github.com/spaceadler/adleros/blob/main/docs/keyboard.md),
 [customizing](https://github.com/spaceadler/adleros/blob/main/docs/customizing.md) (wallpapers, dock
 icons, widgets, settings) and [security](https://github.com/spaceadler/adleros/blob/main/docs/security.md).
@@ -224,8 +232,9 @@ the apps themselves, are specific to your machine, and are never committed;
 ├── homelab.env             # (generated) domain, timezone, storage path, your app list
 ├── containers/
 │   ├── catalog.tsv         # every app: genre, address, port, description
-│   ├── core/               # nginx · pihole · vaultwarden · os (the home screen,
-│   │                       #   adlerOS, fetched into core/os/adleros by install.sh)
+│   ├── core/               # nginx · pihole · vaultwarden · os (the home screen:
+│   │                       #   (generated) all written by adlerOS's own installer,
+│   │                       #   with adlerOS itself in core/os/adleros)
 │   ├── system/             # glance · beszel · cup
 │   ├── media/              # immich · stremio · navidrome · audiobookshelf
 │   ├── knowledge/          # globnotes · memos · bookstack ·
@@ -250,9 +259,9 @@ the apps themselves, are specific to your machine, and are never committed;
 ├── scripts/
 │   ├── backup.sh           # Layer 1 backup (see below)
 │   ├── renew-certs.sh      # only for HTTPS with your own domain
-│   └── agent/              # the home screen's helper (adlerOS's agent.py) here:
-│       ├── actions.json    #   this homelab's actions: apply settings, back up, update
-│       └── homelab-agent.{path,service}.template
+│   └── agent/
+│       └── actions.json    # this homelab's actions for adlerOS's helper: apply
+│                           #   settings, back up, update
 └── docs/
     └── tls.md              # HTTPS: Vaultwarden by default, every app optionally
 ```
@@ -355,7 +364,7 @@ adlerOS's **Settings** has the homelab's own rows too:
 **How the home screen changes things without being powerful.** adlerOS has
 no Docker or root access. For anything beyond its own settings it writes a
 request file into `containers/core/os/data/agent/queue/`, and that's all it
-can do. `install.sh` installs a small systemd service, the **helper**
+can do. adlerOS's installer sets up a small systemd service, the **helper**
 (`homelab-agent.path` and `.service`), which starts when a request appears.
 It runs adlerOS's `agent/agent.py` as your user, never as root, and does
 only what's listed in two files: adlerOS's

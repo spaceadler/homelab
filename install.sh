@@ -356,105 +356,65 @@ fetch_adleros() {
     fi
 }
 
-# adlerOS's own installer, in homelab mode: its questions (your name) before
-# the apps start, and once they're up (--connect), Music, Gallery and
-# Documents' connections to Navidrome, Immich and Paperless.
+# adlerOS installs itself, with its own installer from the copy just
+# fetched: --homelab tells it it's in this homelab, so it takes this
+# homelab's settings and folders. Before the apps start, everything of
+# adlerOS's (its questions, its container in containers/core/os, its nginx
+# site, its helper, starting it); once they're up (--connect), Music, Gallery
+# and Documents' connections to Navidrome, Immich and Paperless.
 adleros_installer() {
     [ $ADLEROS_ON = 1 ] || return 0
     local args=(--homelab "$HOMELAB_DIR" "$@")
     [ "$ASSUME_YES" = 1 ] && args+=(--yes)
-    bash "$ADLEROS_DIR/install.sh" "${args[@]}" ||
+    [ $DO_HOST = 1 ] || args+=(--no-host)
+    [ $DO_START = 1 ] || args+=(--no-start)
+    DOCKER=$DOCKER bash "$ADLEROS_DIR/install.sh" "${args[@]}" ||
         warn "adlerOS's installer stopped${1:+ ($1)}; ./install.sh again carries on"
-}
-
-# adlerOS's terminal host: only when ADLEROS_TERMINAL=on in homelab.env, and
-# removed again when it's off.
-install_terminal() {
-    local units=/etc/systemd/system tmp unit data=$CONTAINERS/core/os/data terminal
-    terminal=$(conf_get ADLEROS_TERMINAL)
-    [ $ADLEROS_ON = 1 ] || terminal=off # it's adlerOS's
-    case $terminal in
-    on | yes | true | 1) ;;
-    *)
-        if [ -e "$units/adleros-terminal.path" ]; then
-            sudo systemctl disable --now adleros-terminal.path adleros-terminal.service >/dev/null 2>&1 || true
-            sudo rm -f "$units/adleros-terminal.path" "$units/adleros-terminal.service"
-            sudo systemctl daemon-reload
-            info "terminal: off, and its host removed"
-        fi
-        return
-        ;;
-    esac
-    tmp=$(mktemp)
-    for unit in service path; do
-        # Single quotes on purpose: envsubst takes the names, not the values.
-        # shellcheck disable=SC2016
-        AGENT_USER=$USER AGENT_GROUP=$(id -gn) ADLEROS_DIR=$ADLEROS_DIR ADLEROS_DATA=$data HOMELAB_DIR=$HOMELAB_DIR \
-            envsubst '${AGENT_USER} ${AGENT_GROUP} ${ADLEROS_DIR} ${ADLEROS_DATA} ${HOMELAB_DIR}' \
-            <"$ADLEROS_DIR/agent/adleros-terminal.$unit.template" >"$tmp"
-        sudo install -m 0644 -o root -g root "$tmp" "$units/adleros-terminal.$unit"
-    done
-    rm -f "$tmp"
-    sudo systemctl daemon-reload
-    sudo systemctl enable --now adleros-terminal.path >/dev/null 2>&1
-    info "terminal: on (admin mode and your password; log: journalctl -u adleros-terminal)"
 }
 
 install_agent() {
     step "Home screen helper"
-    local lib=/usr/local/libexec/homelab adlib=/usr/local/libexec/adleros units=/etc/systemd/system tmp unit
-    # It's adlerOS's (its agent.py, for what the home screen asks): none
-    # without it, and gone again when adlerOS is switched off.
+    local lib=/usr/local/libexec/homelab units=/etc/systemd/system tmp unit
+    # The helper is adlerOS's: its installer sets it up (below). Without
+    # adlerOS there's none, and switching adlerOS off takes away what it set
+    # up here (its units, the terminal host, both sudo rules).
     if [ $ADLEROS_ON = 0 ]; then
-        if [ -e "$units/homelab-agent.path" ]; then
-            sudo systemctl disable --now homelab-agent.path homelab-agent.service >/dev/null 2>&1 || true
-            sudo rm -f "$units/homelab-agent.path" "$units/homelab-agent.service" /etc/sudoers.d/homelab
+        if [ -e "$units/homelab-agent.path" ] || [ -e "$units/adleros-terminal.path" ]; then
+            sudo systemctl disable --now homelab-agent.path homelab-agent.service adleros-terminal.path adleros-terminal.service >/dev/null 2>&1 || true
+            for unit in homelab-agent adleros-terminal; do sudo rm -f "$units/$unit.path" "$units/$unit.service"; done
+            sudo rm -f /etc/sudoers.d/homelab /etc/sudoers.d/adleros
             sudo systemctl daemon-reload
-            info "off with adlerOS: its units and sudo rule removed"
+            info "off with adlerOS: its units and sudo rules removed"
         else
             info "none: it's adlerOS's, and adlerOS is off"
         fi
-        install_terminal
         return
     fi
     if [[ $HOMELAB_DIR =~ [[:space:]\|\&\\] ]]; then
         warn "this folder's path has a space or one of | & \\; move it for the home screen's helper to work"
         return
     fi
+    # This homelab's own root step for it: Back up now (scripts/agent/actions.json).
     tmp=$(mktemp)
-    sudo install -d -m 0755 -o root -g root "$lib" "$adlib"
+    sudo install -d -m 0755 -o root -g root "$lib"
     # backup.sh finds the homelab folder from its own location; the root copy
     # lives elsewhere, so it gets the path written in.
     sed "s|^HOMELAB=.*|HOMELAB=\"$HOMELAB_DIR\"|" "$HOMELAB_DIR/scripts/backup.sh" >"$tmp"
     sudo install -m 0755 -o root -g root "$tmp" "$lib/backup"
-    # Restart and shut down: adlerOS's script, where adlerOS's actions expect it.
-    sudo install -m 0755 -o root -g root "$ADLEROS_DIR/agent/power" "$adlib/power"
-    sudo rm -f "$lib/power" # where it used to live
-
+    sudo rm -f "$lib/power" # where adlerOS's used to live
     {
-        echo "# Written by install.sh. The homelab helper runs as $USER and may run"
-        echo "# exactly these as root, without a password, and nothing else."
-        echo "$USER ALL=(root) NOPASSWD: $lib/backup, $adlib/power reboot, $adlib/power poweroff"
+        echo "# Written by install.sh. The home screen's helper runs as $USER and may"
+        echo "# run exactly this as root, without a password (adlerOS's own are in"
+        echo "# /etc/sudoers.d/adleros)."
+        echo "$USER ALL=(root) NOPASSWD: $lib/backup"
     } >"$tmp"
     if ! sudo visudo -cf "$tmp" >/dev/null; then
         rm -f "$tmp"
         die "the generated sudoers rule didn't validate; nothing was installed"
     fi
     sudo install -m 0440 -o root -g root "$tmp" /etc/sudoers.d/homelab
-
-    for unit in service path; do
-        # Single quotes on purpose: envsubst takes the names, not the values.
-        # shellcheck disable=SC2016
-        AGENT_USER=$USER AGENT_GROUP=$(id -gn) HOMELAB_DIR=$HOMELAB_DIR \
-            envsubst '${AGENT_USER} ${AGENT_GROUP} ${HOMELAB_DIR}' \
-            <"$HOMELAB_DIR/scripts/agent/homelab-agent.$unit.template" >"$tmp"
-        sudo install -m 0644 -o root -g root "$tmp" "$units/homelab-agent.$unit"
-    done
     rm -f "$tmp"
-    sudo systemctl daemon-reload
-    sudo systemctl enable --now homelab-agent.path >/dev/null 2>&1
-    install_terminal
-    info "ready: settings, backups and updates from the home screen (log: journalctl -u homelab-agent)"
+    info "backups from the home screen: ready (adlerOS's installer sets up the helper itself)"
 }
 
 # ------------------------------------------------------------------ settings
@@ -808,13 +768,14 @@ main() {
     [ -f "$(app_dir os)/.env" ] || OS_ENV_NEW=1 # its password is shown at the end, this once
     mkdir -p "$SITES"
     find "$SITES" -maxdepth 1 -name '*.conf' -delete # regenerated just below
-    for a in "${SELECTED[@]}"; do configure_app "$a"; done
+    # adlerOS (os) isn't one of these: its own installer sets it up, below.
+    for a in "${SELECTED[@]}"; do [ "$a" = os ] || configure_app "$a"; done
     info "done: .env, rendered configs and nginx sites written"
     adleros_installer
 
     if [ $DO_START = 1 ]; then
         step "Starting"
-        for a in "${SELECTED[@]}"; do start_app "$a"; done
+        for a in "${SELECTED[@]}"; do [ "$a" = os ] || start_app "$a"; done
         reload_nginx
         adleros_installer --connect
     fi
