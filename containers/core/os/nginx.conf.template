@@ -1,9 +1,0 @@
-# Homelab home screen → http://os.<domain>
-server {
-    include snippets/listen.conf;
-    server_name os.*;
-    location / {
-        proxy_pass http://${TS_IP}:8686;
-        include snippets/proxy.conf;
-    }
-}

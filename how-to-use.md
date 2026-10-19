@@ -67,7 +67,8 @@ cd ~/homelab
 It works through these steps, printing what it's doing as it goes:
 
 0. **adlerOS:** asks whether you want the home screen (yes, unless you say
-   no), and fetches it.
+   no), and fetches it from its own repository. Its own installer sets it up
+   later in the run (step 6).
 1. **Packages:** installs Docker (from Docker's own repository) and
    Tailscale.
 2. **Tailscale:** prints a login link. Open it and add this machine to your
@@ -83,9 +84,10 @@ It works through these steps, printing what it's doing as it goes:
 5. **The app menu:** Nginx, Pi-hole and Vaultwarden are always included.
    Tick what you want with Space, then press Enter. The list, with what
    each app does, is in the [README](README.md#the-apps-and-their-addresses).
-6. **Setup and start:** generates every password, writes the configs, asks
-   your first name (adlerOS's installer, for its greeting) and starts the
-   apps.
+6. **Setup and start:** generates every password and writes the configs;
+   then adlerOS's own installer (run with `--homelab`) asks your first name,
+   sets adlerOS up in `containers/core/os/` with its helper, and starts it;
+   then the apps start.
 7. **Connecting adlerOS's apps:** Documents to Paperless by itself; for
    Immich and Navidrome it offers to make your admin account (they have
    none yet), and with it the key adlerOS's Gallery and Music use. Say no

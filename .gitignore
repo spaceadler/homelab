@@ -15,6 +15,9 @@
 !/containers/*/*/pre-start.sh
 !/containers/*/*/post-start.sh
 !/containers/*/*/Dockerfile
+# adlerOS (core/os) comes from its own repository: its installer writes all
+# of containers/core/os/ (its copy of adlerOS, compose file, .env, data).
+/containers/core/os/*
 # ...and the static config a few apps ship with.
 !/containers/core/nginx/snippets/
 /containers/core/nginx/snippets/listen.conf
