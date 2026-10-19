@@ -1,9 +1,9 @@
-# Radicale → http://cal.<domain>
+# Vikunja → http://todo.<domain>
 server {
     include snippets/listen.conf;
-    server_name cal.*;
+    server_name todo.*;
     location / {
-        proxy_pass http://127.0.0.1:5222;
+        proxy_pass http://${TS_IP}:3456;
         include snippets/proxy.conf;
     }
 }

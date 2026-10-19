@@ -9,8 +9,9 @@ services:
     image: nginx:alpine
     container_name: nginx
     restart: unless-stopped
-    # Host networking: nginx reaches every app at 127.0.0.1:<port>, the same
-    # port you would type by hand. Port 80 is then guarded by ufw like any
+    # Host networking: nginx reaches every app at its Tailscale address and
+    # port (each site's ${TS_IP}:<port>), the address you would type by hand;
+    # only Vaultwarden, bound to loopback on purpose, at 127.0.0.1. Port 80 is then guarded by ufw like any
     # other host service: open on tailscale0, closed on the LAN.
     network_mode: host
     volumes:

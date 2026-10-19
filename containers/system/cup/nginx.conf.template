@@ -1,9 +1,9 @@
-# Globnotes → http://notes.<domain>
+# Cup → http://cup.<domain>
 server {
     include snippets/listen.conf;
-    server_name notes.*;
+    server_name cup.*;
     location / {
-        proxy_pass http://127.0.0.1:8487;
+        proxy_pass http://${TS_IP}:9898;
         include snippets/proxy.conf;
     }
 }

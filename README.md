@@ -74,7 +74,7 @@ graph LR
     User ==> VPN
     VPN -.->|"1. DNS"| PiHole
     VPN ==>|"2. http://gallery.homelab.local"| Nginx
-    Nginx -->|"3. 127.0.0.1:port"| Apps
+    Nginx -->|"3. 100.x.y.z:port"| Apps
     VPN ==>|"https://machine.tailnet.ts.net"| Serve --> Vault
     LAN -. "✗ dropped by the firewall" .-> Host
 ```
@@ -87,7 +87,7 @@ A request for `http://gallery.homelab.local` takes three hops:
 2. **Machine → nginx.** The browser connects to that IP on port 80, inside
    Tailscale's encrypted WireGuard tunnel.
 3. **nginx → app.** nginx looks at the name, finds the site for `gallery.*`,
-   and forwards to Immich on `127.0.0.1:2283`.
+   and forwards to Immich at this machine's Tailscale IP, port `2283`.
 
 **Vaultwarden is the one exception.** Password managers insist on HTTPS, so
 `tailscale serve` gives it a real certificate on this machine's tailnet name
@@ -270,7 +270,7 @@ example:
 immich/
 ├── docker-compose.yml   # the recipe: images, ports, mounts, settings
 ├── .env.example         # its settings, with placeholders where secrets go
-├── nginx.conf           # its route: server_name gallery.* → 127.0.0.1:2283
+├── nginx.conf.template  # its route: server_name gallery.* → ${TS_IP}:2283
 ├── .env                 # (generated) globals + this app's generated secrets, chmod 600
 └── postgres/            # (generated) the app's own data
 ```
@@ -481,6 +481,8 @@ home network, only from devices on your tailnet.
   admin mode, which takes your password to turn on.
 - **Vaultwarden is HTTPS-only.** It's bound to `127.0.0.1`, reachable only
   through `tailscale serve` (or nginx in HTTPS mode), and sign-ups are off.
+  It's the one app nginx reaches on loopback; the rest it reaches at the
+  Tailscale IP, as you would.
 
 Things to know, so nothing surprises you:
 
@@ -610,10 +612,10 @@ cd ~/homelab && ./install.sh
    - `.env.example`. Secrets are placeholders that `install.sh` fills in
      once: `__PASS__` (32 letters and digits), `__HEX32__`, `__HEX64__`,
      `__HEX128__`, and `__B64_32__`.
-   - `nginx.conf`, a `server` block with `include snippets/listen.conf;`,
-     `server_name <subdomain>.*;` and a `location /` that proxies to
-     `127.0.0.1:<port>` with `include snippets/proxy.conf;`. Copy any
-     app's.
+   - `nginx.conf.template`, a `server` block with `include
+     snippets/listen.conf;`, `server_name <subdomain>.*;` and a `location /`
+     that proxies to `${TS_IP}:<port>` (filled in with this machine's
+     Tailscale IP) with `include snippets/proxy.conf;`. Copy any app's.
    - **Optionally**, `*.template` files and `configure.sh` /
      `pre-start.sh` / `post-start.sh` hooks. Hooks run from the app folder
      with its `.env` loaded, plus `$DOCKER`, `$HOMELAB_APPS`,

@@ -1,9 +1,9 @@
-# Kiwix → http://wiki.<domain>
+# BookStack → http://books.<domain>
 server {
     include snippets/listen.conf;
-    server_name wiki.*;
+    server_name books.*;
     location / {
-        proxy_pass http://127.0.0.1:8092;
+        proxy_pass http://${TS_IP}:6875;
         include snippets/proxy.conf;
     }
 }

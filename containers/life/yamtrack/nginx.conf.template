@@ -3,7 +3,7 @@ server {
     include snippets/listen.conf;
     server_name catalogue.*;
     location / {
-        proxy_pass http://127.0.0.1:2143;
+        proxy_pass http://${TS_IP}:2143;
         include snippets/proxy.conf;
     }
 }

@@ -1,9 +1,9 @@
-# Memos → http://memos.<domain>
+# Kiwix → http://wiki.<domain>
 server {
     include snippets/listen.conf;
-    server_name memos.*;
+    server_name wiki.*;
     location / {
-        proxy_pass http://127.0.0.1:5230;
+        proxy_pass http://${TS_IP}:8092;
         include snippets/proxy.conf;
     }
 }

@@ -3,7 +3,7 @@ server {
     include snippets/listen.conf;
     server_name bookmarks.*;
     location / {
-        proxy_pass http://127.0.0.1:3786;
+        proxy_pass http://${TS_IP}:3786;
         include snippets/proxy.conf;
     }
 }

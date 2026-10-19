@@ -3,7 +3,7 @@ server {
     include snippets/listen.conf;
     server_name audiobook.*;
     location / {
-        proxy_pass http://127.0.0.1:13378;
+        proxy_pass http://${TS_IP}:13378;
         include snippets/proxy.conf;
     }
 }

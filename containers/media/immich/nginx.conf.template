@@ -5,7 +5,7 @@ server {
     # Phone backups upload whole videos in one request.
     client_max_body_size 50000M;
     location / {
-        proxy_pass http://127.0.0.1:2283;
+        proxy_pass http://${TS_IP}:2283;
         include snippets/proxy.conf;
     }
 }
