@@ -196,6 +196,20 @@ host_packages() {
         sudo tailscale up
     fi
     info "Tailscale IP: $(tailscale ip -4 | head -n1)"
+    # Visitors keep their own address on the way into a container, so nginx
+    # can pass it on and adlerOS (ADLEROS_NETWORKS: tailscale) knows them.
+    # Otherwise Tailscale rewrites what it forwards to the Docker network's
+    # gateway whenever its firewall rules land ahead of Docker's, which the
+    # order things start in at boot decides (a power cut did, once). That
+    # rewrite is for sharing subnet routes, so it stays where any are shared.
+    if tailscale debug prefs 2>/dev/null |
+        python3 -c 'import json, sys; sys.exit(1 if json.load(sys.stdin).get("AdvertiseRoutes") else 0)'; then
+        sudo tailscale set --snat-subnet-routes=false
+        info "Tailscale passes visitors' addresses on to your containers"
+    else
+        warn "this machine shares subnet routes, so Tailscale may hand containers its own address for visitors;"
+        warn "if adlerOS then won't open through nginx: sudo tailscale set --snat-subnet-routes=false"
+    fi
 }
 
 # Physical network cards: the only interfaces that face the LAN. Docker
