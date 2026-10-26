@@ -7,5 +7,6 @@ server {
     location / {
         proxy_pass http://${TS_IP}:3210;
         include snippets/proxy.conf;
+        include snippets/frame.conf; # adlerOS may show it in a window
     }
 }
