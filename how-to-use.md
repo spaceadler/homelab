@@ -1,8 +1,8 @@
 # How to Use This Repo
 
 From a blank machine to your own photos, music and passwords on your phone.
-The [README](README.md) is the reference for everything afterwards:
-addresses, commands, the security model.
+The [README](README.md) and [`docs/`](docs/) are the reference for everything
+afterwards: addresses, commands, the security model.
 
 ## Prelude: Philosophy & Evolution
 Keep in mind that this setup is not necessarily the "best" way to build a homelab. It is simply the way that works best for me. This architecture originally started as a simple storage container for my documents for an entire year before evolving into a wider, more comprehensive ecosystem of containers, `dev` repositories, and staged workflows. Features like the `~/homelab/dev` structure and the tight integration with Gitea and Agentic AIs are relatively new additions, and so is `install.sh`, which turned this repository from a skeleton you fill in yourself into one you can clone and run. Because of this organic growth, the architecture remains highly malleable. Expect further updates, refinements, and expansions to this repository as the homelab continues to evolve!
@@ -83,7 +83,7 @@ It works through these steps, printing what it's doing as it goes:
    it at a bigger disk if you have one).
 5. **The app menu:** Nginx, Pi-hole and Vaultwarden are always included.
    Tick what you want with Space, then press Enter. The list, with what
-   each app does, is in the [README](README.md#the-apps-and-their-addresses).
+   each app does, is in [docs/apps.md](docs/apps.md).
 6. **Setup and start:** generates every password and writes the configs;
    then adlerOS's own installer (run with `--homelab`) asks your first name,
    sets adlerOS up in `containers/core/os/` with its helper, and starts it;
@@ -139,7 +139,7 @@ phone) an app to keep it in the dock, or the desktop to pick widgets.
 Most apps make the first account you create the admin, so create yours
 before you invite anyone. The handful that work differently (Vaultwarden's
 invite, BookStack's default login, qBittorrent's temporary password) are
-listed under [First logins](README.md#first-logins). Every generated
+listed under [First logins](docs/apps.md#first-logins). Every generated
 password is in its app's `.env`:
 
 ```bash
@@ -181,7 +181,7 @@ Then get the files off the machine:
 That's 3-2-1 with no extra effort once it's set up. The why, and four
 tips that make it robust (file versioning, connecting over Tailscale,
 where secrets end up, pruning old backups), are in
-[Backup & disaster recovery](README.md#backup--disaster-recovery).
+[Backup & disaster recovery](docs/backup.md).
 
 ## 6. Living with it
 
@@ -189,7 +189,7 @@ where secrets end up, pruning old backups), are in
   screen's Settings.
 - **Start, stop or restart an app, or bring in compose files you already
   run:** the App Store in the dock (see
-  [The App Store](README.md#the-app-store)).
+  [The App Store](docs/operating.md#the-app-store)).
 - **See what's using the CPU or memory:** Live Usage in the dock.
 - **Add or remove apps:** **Install** and **Delete** in the App Store, or
   run `./install.sh` again and tick or untick them.
@@ -197,7 +197,7 @@ where secrets end up, pruning old backups), are in
   app's folder; Cup shows which ones have updates.
 - **Update this repo:** `git pull && ./install.sh`.
 - **More:** every other command is in
-  [Operating it](README.md#operating-it).
+  [Operating it](docs/operating.md#operating-it).
 
 ### Extending with custom scripts
 `scripts/` holds the backup and certificate scripts. Put your own
