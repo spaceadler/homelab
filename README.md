@@ -117,6 +117,7 @@ A compromised home screen can only *ask* for one of those listed actions.
 | [docs/backup.md](docs/backup.md) | 3-2-1 backup with Syncthing and an encrypted cloud; recovering on a new machine |
 | [docs/adding-an-app.md](docs/adding-an-app.md) | The app-folder contract |
 | [docs/hardware.md](docs/hardware.md) | The reference Raspberry Pi 4 build |
+| [CODEMAP.md](CODEMAP.md) | Files, hub functions and the call graph, generated from the code |
 
 <details>
   <summary>Screenshots</summary>
