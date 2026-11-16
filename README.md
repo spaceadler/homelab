@@ -1,54 +1,33 @@
 # A Sovereign Homelab
 
-> Engineering a comprehensive, self-sovereign digital infrastructure architected on first principles, reclaiming data ownership through physically isolated hardware, encrypted mesh networking, and auditable Infrastructure as Code (IaC), thereby eliminating reliance on rent-seeking centralized cloud providers.
+> One script and ~30 apps that turn a Raspberry Pi (or any 64-bit Debian/Ubuntu box) into your own cloud: reachable from your devices anywhere, by nobody else.
 
-![Status](https://img.shields.io/badge/Status-Active-success)
 ![Containerization](https://img.shields.io/badge/Containerization-Docker-blue)
 ![Network](https://img.shields.io/badge/Network-Tailscale-black)
-![OS](https://img.shields.io/badge/OS-Debian-red)
 ![Architecture](https://img.shields.io/badge/Architecture-ARM64%20%7C%20x86--64-orange)
 
-> Are you new to self hosting? **[Click here](abstract.md)** for a TL;DR!
+New to self-hosting? Read the **[TL;DR](abstract.md)**. Installing for the first time? Follow the **[How-to-Use Guide](how-to-use.md)**.
 
-This repository is one script and about thirty apps. It turns a Raspberry Pi
-(or any 64-bit Debian or Ubuntu machine) into your own photo library, music
-streamer, password manager, notes, documents, location history, finance
-tracker and more. You can reach all of it from your phone and laptop
-anywhere in the world, and nobody else can reach any of it.
+## Quick Start
 
 ```bash
 git clone https://github.com/spaceadler/homelab ~/homelab
 cd ~/homelab && ./install.sh
 ```
 
-`install.sh` installs Docker and Tailscale, locks the firewall, asks which
-apps you want, generates every password, and starts them. Afterwards,
-`http://homelab.local` opens your **home screen**, adlerOS, styled after
-umbrelOS: your apps as icons over a wallpaper, one page per collection,
-with widgets, search, a dock and an App Store, behind a password. adlerOS
-is optional (`--no-adleros`, or say no when it asks): without it, the
-homelab is the same, minus the home screen. It's safe to run
-again whenever you like: that's also how you add apps and apply updates. The
-**[How-to-Use Guide](how-to-use.md)** walks through a first install step by
-step.
+```mermaid
+flowchart LR
+    run(["./install.sh"]) --> host["host: Docker, Tailscale,<br/>ufw + DOCKER-USER lockout"]
+    host --> pick["pick apps<br/>(catalog.tsv)"]
+    pick --> secrets["generate every secret<br/>(once, kept forever)"]
+    secrets --> routes["render .env, nginx routes,<br/>Pi-hole wildcard"]
+    routes --> up["start the apps"]
+    up --> os["adlerOS home screen<br/>http://homelab.local"]
+```
 
-## Table of Contents
-1. [How it works](#how-it-works)
-2. [The apps and their addresses](#the-apps-and-their-addresses)
-3. [Directory structure](#directory-structure)
-4. [Operating it](#operating-it)
-   - [Settings and the helper](#settings-and-the-helper)
-   - [The App Store](#the-app-store)
-5. [First logins](#first-logins)
-6. [Security model](#security-model)
-7. [HTTPS](#https)
-8. [Backup & disaster recovery](#backup--disaster-recovery)
-9. [Adding an app](#adding-an-app)
-10. [Hardware](#hardware)
-11. [Screenshots](#screenshots)
-12. [Credits](#credits)
+Run it again anytime: it's how you add apps, apply settings and update. It never stops or deletes anything.
 
-## How it works
+## How It Works
 
 ```mermaid
 graph LR
@@ -76,590 +55,71 @@ graph LR
     VPN ==>|"2. http://gallery.homelab.local"| Nginx
     Nginx -->|"3. 100.x.y.z:port"| Apps
     VPN ==>|"https://machine.tailnet.ts.net"| Serve --> Vault
-    LAN -. "✗ dropped by the firewall" .-> Host
+    LAN -.->|"✗ dropped by the firewall"| Host
 ```
 
-A request for `http://gallery.homelab.local` takes three hops:
+1. **Name → machine:** Pi-hole's one wildcard record sends every `*.homelab.local` to this machine's Tailscale IP.
+2. **Machine → nginx:** port 80, inside the WireGuard tunnel.
+3. **nginx → app:** matched by name, forwarded to the app's port. `http://<tailscale-ip>:<port>` works too.
 
-1. **Name → machine.** Your device asks Pi-hole, through Tailscale's DNS
-   settings, for `gallery.homelab.local`. Pi-hole has one wildcard record:
-   *every* `<anything>.homelab.local` is this machine's Tailscale IP.
-2. **Machine → nginx.** The browser connects to that IP on port 80, inside
-   Tailscale's encrypted WireGuard tunnel.
-3. **nginx → app.** nginx looks at the name, finds the site for `gallery.*`,
-   and forwards to Immich at this machine's Tailscale IP, port `2283`.
+**Vaultwarden** is the exception: it gets real HTTPS through `tailscale serve`. **The router forwards no ports**, and the home LAN is firewalled out.
 
-**Vaultwarden is the one exception.** Password managers insist on HTTPS, so
-`tailscale serve` gives it a real certificate on this machine's tailnet name
-([details](docs/tls.md)).
+## The Apps
 
-**The home screen is the front door.** `http://homelab.local` (or
-`os.homelab.local`) opens **[adlerOS](https://github.com/spaceadler/adleros)**, styled after umbrelOS:
-widgets, your apps as icons on one page per collection (the folders under
-`containers/`: Media, Knowledge, Life…; imported apps are on the last page,
-**Extras**), a dock of the apps you pin, **All apps**, search (⌘K or `/`),
-notifications, **Files** (your `mailbox/` as its Desktop, your storage
-folder, and this homelab itself read-only, with a text editor), and an
-**App Store** that installs, starts, stops, updates and deletes apps and shows
-their logs. **Live Usage** charts the machine and
-every app's share; **Settings** changes the domain and timezone, backs up and
-updates the homelab. It all works from a keyboard alone (press `?`). On a
-computer, **desktop mode** puts windows side by side and the mailbox on the
-desktop.
+```mermaid
+flowchart TB
+    core["Core: Nginx · Pi-hole · Vaultwarden · adlerOS"]
+    core --- sys["System<br/>Glance · Beszel · Cup"]
+    core --- media["Media<br/>Immich · Stremio · Navidrome · Audiobookshelf"]
+    core --- know["Knowledge<br/>Globnotes · Memos · BookStack · Karakeep · Kiwix · 4get"]
+    core --- prod["Productivity<br/>Vikunja · Super Productivity · Radicale · Paperless-ngx · CryptPad · Nomie"]
+    core --- life["Life<br/>Dawarich · TREK · AirTrail · Yamtrack · Ghostfolio · Maybe"]
+    core --- files["Files<br/>Syncthing · File Browser · Gitea · qBittorrent"]
+```
 
-**adlerOS is its own project, and none of it lives here.** This repository
-is the homelab: the machine's setup, the apps and their recipes. adlerOS
-(the code, and how it runs in a homelab) is all in
-[its own repository](https://github.com/spaceadler/adleros), one codebase
-for both ways it's used: over a homelab you built yourself, or as this
-homelab's home screen. All `install.sh` does about it is fetch it into
-`containers/core/os/adleros/` (from GitHub, else the Gitea it's pushed to),
-keep it updated, and run *its* installer with `--homelab ~/homelab`, which
-tells it where it is. That installer does everything of adlerOS's: your
-name, its password, its container in `containers/core/os/` (all of that
-folder is written by it, none of it committed here), its address
-`os.<domain>`, its helper, the terminal if you want one, and, once the apps
-are up, connecting adlerOS's Music, Gallery and Documents to Navidrome,
-Immich and Paperless (Documents by itself, the other two with your login,
-making their admin if they have none yet). Its docs: [the guide](https://github.com/spaceadler/adleros/blob/main/docs/guide.md),
-[keyboard](https://github.com/spaceadler/adleros/blob/main/docs/keyboard.md),
-[customizing](https://github.com/spaceadler/adleros/blob/main/docs/customizing.md) (wallpapers, dock
-icons, widgets, settings) and [security](https://github.com/spaceadler/adleros/blob/main/docs/security.md).
-It has no access to Docker; it runs as your user, read-only, with no
-capabilities, behind its own password (`OS_PASSWORD` in
-`containers/core/os/.env`).
+Core is always installed; the rest you pick by genre. Every address, port and first login: **[docs/apps.md](docs/apps.md)**. The source of truth is [`containers/catalog.tsv`](containers/catalog.tsv).
 
-**Everything still works by port.** `http://<tailscale-ip>:2283` reaches
-Immich directly. The names are a convenience, not a dependency.
+## The Home Screen
 
-**What the router and the internet see:** nothing. The router forwards no
-ports, and Tailscale connects outbound. Your home Wi-Fi is also locked out:
-other devices on your own network can't reach any app (see
-[Security model](#security-model)).
+`http://homelab.local` opens **[adlerOS](https://github.com/spaceadler/adleros)**, styled after umbrelOS: app pages per collection, widgets, a dock, search, Files, Live Usage, Settings and an App Store, all keyboard-drivable. It's **its own repo**: `install.sh` only fetches it into `containers/core/os/adleros/` and runs its installer. Skip it with `--no-adleros`.
 
-## The apps and their addresses
+```mermaid
+flowchart LR
+    os["adlerOS<br/>(no Docker, no root)"] -->|"writes a request"| q[("queue/")]
+    q --> helper["helper (systemd)<br/>runs as you"]
+    helper -->|"only actions in<br/>actions.json"| machine["apps · backup · update"]
+```
 
-Core apps are always installed; everything else you pick in
-`install.sh`'s menu, by genre. Addresses below use the default domain,
-`homelab.local`. **Port** is the direct `http://<tailscale-ip>:<port>`
-address. This list is generated from
-[`containers/catalog.tsv`](containers/catalog.tsv), which is also what the
-installer reads.
+A compromised home screen can only *ask* for one of those listed actions.
 
-#### Core (always installed)
-
-| App | What it's for | Address | Port |
-| --- | --- | --- | --- |
-| Nginx | Reverse proxy: turns `<app>.<domain>` into the right port | - | 80 |
-| Pi-hole | DNS for `<app>.<domain>`, plus ad blocking | `http://dns.homelab.local` | 8081 |
-| Vaultwarden | Password manager | `https://<machine>.<tailnet>.ts.net` (`vault.homelab.local` redirects) | 4345 (this machine only) |
-| adlerOS | Home screen with every app you installed, behind a password | `http://os.homelab.local` (and `http://homelab.local`) | 8686 |
-
-#### System
-
-| App | What it's for | Address | Port |
-| --- | --- | --- | --- |
-| Glance | Dashboard of widgets: feeds, calendar, containers | `http://home.homelab.local` | 8080 |
-| Beszel | CPU, RAM, disk and container monitoring | `http://stats.homelab.local` | 8042 |
-| Cup | Shows which container images have updates | `http://cup.homelab.local` | 9898 |
-
-#### Media
-
-| App | What it's for | Address | Port |
-| --- | --- | --- | --- |
-| Immich | Photos and videos, with phone backup | `http://gallery.homelab.local` | 2283 |
-| Stremio | Streaming server for the Stremio apps | `http://watch.homelab.local` | 5543 |
-| Navidrome | Music streaming (Subsonic apps work too) | `http://music.homelab.local` | 4533 |
-| Audiobookshelf | Audiobooks, podcasts and e-books | `http://audiobook.homelab.local` | 13378 |
-
-#### Knowledge
-
-| App | What it's for | Address | Port |
-| --- | --- | --- | --- |
-| Globnotes | Markdown notes in storage/Notes (Obsidian-compatible) | `http://notes.homelab.local` | 8487 |
-| Memos | Quick thoughts, Twitter-style | `http://memos.homelab.local` | 5230 |
-| BookStack | Wiki: shelves, books, chapters, pages | `http://books.homelab.local` | 6875 |
-| Karakeep | Bookmarks that archive the page itself | `http://bookmarks.homelab.local` | 3786 |
-| Kiwix | Offline Wikipedia and other .zim archives | `http://wiki.homelab.local` | 8092 |
-| 4get | Private metasearch engine | `http://search.homelab.local` | 9364 |
-
-#### Productivity
-
-| App | What it's for | Address | Port |
-| --- | --- | --- | --- |
-| Vikunja | Tasks, Kanban, Gantt | `http://todo.homelab.local` | 3456 |
-| Super Productivity | Time blocking and planning, synced over WebDAV | `http://schedule.homelab.local` | 5432 |
-| Radicale | Calendar and contacts (CalDAV/CardDAV) | `http://cal.homelab.local` | 5222 |
-| Paperless-ngx | Scanned documents with OCR and search | `http://docs.homelab.local` | 8302 |
-| CryptPad | End-to-end encrypted office suite (needs [HTTPS](docs/tls.md)) | `http://workspace.homelab.local` | 7000 |
-| Nomie | Life and mood tracking | `http://track.homelab.local` | 5005 |
-
-#### Life
-
-| App | What it's for | Address | Port |
-| --- | --- | --- | --- |
-| Dawarich | Location history (Google Timeline replacement) | `http://timeline.homelab.local` | 3001 |
-| TREK | Trip planner | `http://trips.homelab.local` | 3210 |
-| AirTrail | Flight log | `http://fly.homelab.local` | 9478 |
-| Yamtrack | Movies, shows, anime, books and games you've watched/read/played | `http://catalogue.homelab.local` | 2143 |
-| Ghostfolio | Investment portfolio and net worth | `http://assets.homelab.local` | 3333 |
-| Maybe | Budgeting and expenses | `http://budget.homelab.local` | 13400 |
-
-#### Files
-
-| App | What it's for | Address | Port |
-| --- | --- | --- | --- |
-| Syncthing | Keeps folders in sync across your devices | `http://sync.homelab.local` | 8384 |
-| File Browser | Web file manager for the whole homelab folder | `http://storage.homelab.local` | 8090 |
-| Gitea | Git server (SSH on port 222) | `http://git.homelab.local` | 3000 |
-| qBittorrent | Torrent client, downloads to storage/Downloads | `http://qb.homelab.local` | 6420 |
-
-A few apps answer on a second name or port as well: CryptPad's sandbox at
-`workspacesb.`, Nomie's database at `trackdb.` (CouchDB, port 5984),
-Stremio's streaming server on port 11470, and Gitea's SSH on port 222.
-
-## Directory structure
-
-The repository *is* the homelab: clone it to `~/homelab` and everything
-lives inside. Files marked **(generated)** are written by `install.sh` or by
-the apps themselves, are specific to your machine, and are never committed;
-`.gitignore` keeps them out.
+## Layout
 
 ```text
 ~/homelab/
-├── install.sh              # set up, add apps, apply changes: run it anytime
-├── homelab.env.example     # template for…
-├── homelab.env             # (generated) domain, timezone, storage path, your app list
-├── containers/
-│   ├── catalog.tsv         # every app: genre, address, port, description
-│   ├── core/               # nginx · pihole · vaultwarden · os (the home screen:
-│   │                       #   (generated) all written by adlerOS's own installer,
-│   │                       #   with adlerOS itself in core/os/adleros)
-│   ├── system/             # glance · beszel · cup
-│   ├── media/              # immich · stremio · navidrome · audiobookshelf
-│   ├── knowledge/          # globnotes · memos · bookstack ·
-│   │                       #   karakeep · kiwix · 4get
-│   ├── productivity/       # vikunja · super-productivity · radicale ·
-│   │                       #   paperless-ngx · cryptpad · nomie
-│   ├── life/               # dawarich · trek · airtrail · yamtrack ·
-│   │                       #   ghostfolio · maybe
-│   ├── files/              # syncthing · filebrowser · gitea · qbittorrent
-│   └── extras/             # (generated) apps you imported in the App Store
-├── storage/                # your files, as plain folders (or STORAGE_DIR elsewhere)
-│   ├── Documents/          #   Paperless-ngx archive
-│   ├── Downloads/          #   qBittorrent
-│   ├── Files/              #   general files
-│   ├── Gallery/            #   Immich: originals, thumbnails, encoded video
-│   ├── Inbox/              #   drop scans here; Paperless-ngx imports them
-│   ├── Media/              #   Music, Audiobooks, Podcasts, Books, Kiwix, …
-│   └── Notes/              #   Markdown notes: Globnotes, Obsidian, any editor
-├── backup/containers/      # (generated) dated copies from scripts/backup.sh
-├── dev/                    # your own git repositories (synced with Syncthing)
-├── mailbox/                # inbox for files you haven't sorted yet
-├── scripts/
-│   ├── backup.sh           # Layer 1 backup (see below)
-│   ├── renew-certs.sh      # only for HTTPS with your own domain
-│   └── agent/
-│       └── actions.json    # this homelab's actions for adlerOS's helper: apply
-│                           #   settings, back up, update
+├── install.sh          # set up, add apps, apply changes: run it anytime
+├── homelab.env         # (generated) domain, timezone, storage path, app list
+├── containers/         # catalog.tsv + one folder per app, by genre
+├── storage/            # your files as plain folders: no hidden volumes
+├── backup/             # (generated) dated copies from scripts/backup.sh
+├── dev/ · mailbox/     # your repos · your unsorted-files inbox
+├── scripts/            # backup.sh, renew-certs.sh, agent/actions.json
 └── docs/
-    └── tls.md              # HTTPS: Vaultwarden by default, every app optionally
 ```
 
-Your files stay plain files: no Docker volumes hide your photos or music.
-If everything else breaks, plug the disk into any computer and copy
-`storage/` off it.
+## Documentation
 
-### Inside an app folder
-
-Every app follows the same shape. `containers/media/immich/`, for
-example:
-
-```text
-immich/
-├── docker-compose.yml   # the recipe: images, ports, mounts, settings
-├── .env.example         # its settings, with placeholders where secrets go
-├── nginx.conf.template  # its route: server_name gallery.* → ${TS_IP}:2283
-├── .env                 # (generated) globals + this app's generated secrets, chmod 600
-└── postgres/            # (generated) the app's own data
-```
-
-Some apps also have a `*.template` (a config file that needs your domain,
-rendered to the same name without `.template`), or a hook that
-`install.sh` runs at the right moment. `configure.sh` runs on every install
-(e.g. Syncthing pre-seeds its GUI login), `pre-start.sh` can hold an app
-back (Kiwix waits until you have a `.zim` file), and `post-start.sh` runs
-once it's up (Vaultwarden sets up `tailscale serve`).
-
-You can work in any app folder with plain Docker Compose: every `.env`
-carries the global settings too, so `docker compose up -d` there just
-works.
-
-## Operating it
-
-Everyday commands, all run from `~/homelab`:
-
-| To… | Run |
-| --- | --- |
-| Add or remove apps | the App Store's **Install** and **Delete**, or `./install.sh` and tick or untick in the menu |
-| Apply a change to `homelab.env` (domain, timezone, storage path) | `./install.sh` |
-| Update this repo | `git pull && ./install.sh` |
-| See what's running | the App Store in adlerOS, Beszel, or `docker ps` |
-| Start, stop, restart or delete an app | the App Store, or `docker compose` in its folder |
-| Read an app's logs | `cd containers/<genre>/<app> && docker compose logs -f` |
-| Restart an app | `cd containers/<genre>/<app> && docker compose restart` |
-| Change one app's settings | edit its `.env`, then `docker compose up -d` in its folder |
-| Stop an app | `cd containers/<genre>/<app> && docker compose down` (its data stays) |
-| Update one app | `cd containers/<genre>/<app> && docker compose pull && docker compose up -d` |
-| Update every running app | see below |
-| Find a password | `grep -h PASSWORD containers/*/*/.env` |
-
-To update every running app in one go:
-
-```bash
-for d in containers/*/*/; do
-  (cd "$d" && [ -n "$(docker compose ps -q 2>/dev/null)" ] && docker compose pull -q && docker compose up -d)
-done
-docker image prune -f   # clear out the old image versions
-```
-
-Cup (`cup.homelab.local`) shows which apps have updates waiting, so you can
-read the changelogs first.
-
-**How `install.sh` behaves:**
-
-- **It doesn't prompt** with `--apps "immich memos …"` or `--yes`.
-  `--apps` sets the *whole* list, so name everything you want.
-- **Secrets are made once and kept.** Re-running never changes a password.
-  If a newer version of the repo adds a setting to an app's `.env.example`,
-  it's appended to your `.env`.
-- **It never stops or deletes anything.** Unticking an app removes its
-  route and dashboard entry; `docker compose down` in its folder stops it.
-- **`--no-host`** skips installing packages and the firewall, for a machine
-  that's already set up. **`--no-start`** writes the config without
-  starting anything.
-- **`--no-adleros`** sets the homelab up without adlerOS (and without its
-  helper): `ADLEROS=off` in `homelab.env`, which later runs keep. The bare
-  domain then goes to Glance, if you have it. `ADLEROS=on` and
-  `./install.sh` adds adlerOS back.
-- **adlerOS comes from GitHub,** and from `ADLEROS_MIRRORS` (the Gitea it's
-  pushed to, by default) when GitHub can't be reached; `ADLEROS_REPO` and
-  `ADLEROS_REF` pick another copy or version.
-
-### Settings and the helper
-
-adlerOS's **Settings** has the homelab's own rows too:
-
-- **Homelab:** domain and timezone. Changing them shows an **Apply** bar;
-  applying writes `homelab.env` and re-runs `install.sh` for you, with its
-  output shown live. Also shown: HTTPS, your Tailscale address and the
-  storage folder.
-- **System:** **Back up now** (runs `scripts/backup.sh`, and shows the last
-  backup's date) and **Update homelab** (`git pull` + `install.sh`, which
-  also updates adlerOS, then a restart of adlerOS so it runs the new
-  version), next to adlerOS's own: admin mode, restart, shut down, and the
-  **Terminal** (a shell in a window: off unless `ADLEROS_TERMINAL=on` in
-  `homelab.env` and `./install.sh` re-run, and only there in admin mode).
-
-**How the home screen changes things without being powerful.** adlerOS has
-no Docker or root access. For anything beyond its own settings it writes a
-request file into `containers/core/os/data/agent/queue/`, and that's all it
-can do. adlerOS's installer sets up a small systemd service, the **helper**
-(`homelab-agent.path` and `.service`), which starts when a request appears.
-It runs adlerOS's `agent/agent.py` as your user, never as root, and does
-only what's listed in two files: adlerOS's
-`containers/core/os/adleros/agent/actions.json` (apps, restart, shut down)
-and this homelab's `scripts/agent/actions.json` (apply settings, back up,
-update).
-
-- Each action has a fixed list of steps.
-- Each parameter it accepts has a pattern the value must match. Anything
-  else is refused.
-- Commands run without a shell, so a value can't sneak in a second
-  command.
-- The root-only steps go through `sudo` to root-owned copies of fixed
-  scripts: `/usr/local/libexec/homelab/backup` and
-  `/usr/local/libexec/adleros/power`. The rule in `/etc/sudoers.d/homelab`
-  allows exactly those three commands (backup, reboot, power off) and nothing
-  else.
-
-Even a compromised home screen could only ask for one of those actions.
-
-- **What it's doing:** `journalctl -u homelab-agent`.
-- **Not set up:** run `./install.sh` without `--no-host`. With `--no-host`,
-  Settings can still change your name, wallpaper and password, but its
-  buttons wait for a helper that isn't there.
-
-**Adding a setting:** an action in `scripts/agent/actions.json` (if it needs
-to change the machine) and a row in adlerOS's settings catalog; see adlerOS's
-[customizing](https://github.com/spaceadler/adleros/blob/main/docs/customizing.md#settings-rows).
-
-### The App Store
-
-adlerOS's **App Store** works on this homelab's catalog. An app is *every*
-compose file in its folder and in the folders right inside it, so an app made
-of several containers (Immich, Maybe) or several compose files (Beszel and
-its agent) starts and stops as one, each file from its own folder, exactly as
-if you'd typed `docker compose` there. Here:
-
-- **Install** (under **Not installed**: the catalog apps you haven't picked)
-  adds the app to `APPS` in `homelab.env` and re-runs `install.sh`, which sets
-  it up (passwords, nginx route, dashboard entry) and starts it, as if you'd
-  ticked it in the menu.
-- **Delete** stops and removes its containers, takes it out of `APPS`, and
-  re-runs `install.sh`, so its address and dashboard entry go too. Its data
-  and compose files stay, so **Install** brings it back exactly as it was.
-  It needs admin mode; core apps (Pi-hole, Vaultwarden) can't be deleted, and
-  stopping them needs admin mode too.
-- **Start** runs the app's `pre-start.sh` first, like `install.sh` does (Kiwix
-  waits for an archive, Vaultwarden for a MagicDNS name).
-- adlerOS itself and nginx aren't on the list, since stopping either would
-  take the App Store down with it.
-
-**Importing apps you already run** (*Import apps…*) works as in
-[adlerOS's guide](https://github.com/spaceadler/adleros/blob/main/docs/guide.md#importing-apps-adleros-didnt-find).
-Imported apps are recorded in `containers/extras/<app>/app.json`, pointing at
-your compose file; a known app (Jellyfin, say) goes in its collection, the
-rest in **Extras**. Their data lives wherever their compose files keep it, so
-`scripts/backup.sh` doesn't copy it.
-
-## First logins
-
-Every app has its own accounts, on top of Tailscale. Most work the same way:
-on your first visit, you create the first account and it becomes the admin.
-Do that before you share your tailnet with anyone. The exceptions:
-
-| App | First login |
-| --- | --- |
-| Vaultwarden | Sign-ups are off. Open `/admin` with `VAULTWARDEN_ADMIN_TOKEN` from its `.env`, invite your email, then register with it. Afterwards, empty the token in `.env` and `docker compose up -d` to close `/admin`. |
-| Home screen | `OS_PASSWORD`, in `containers/core/os/.env` (the first run's summary shows it). Change it in Settings → Password; from then on, the changed one counts. |
-| Immich, Navidrome | The first account is the admin. `install.sh` offers to make it for you (in a terminal), and with it the login or key adlerOS's Gallery and Music use. |
-| Pi-hole | `PIHOLE_PASSWORD` |
-| Paperless-ngx | `PAPERLESS_ADMIN_USER` / `PAPERLESS_ADMIN_PASSWORD` |
-| File Browser | `admin` / `FILEBROWSER_ADMIN_PASSWORD` (reset to this on every start, so change it in `.env`) |
-| Syncthing | `SYNCTHING_GUI_USER` / `SYNCTHING_GUI_PASSWORD` |
-| Radicale | `RADICALE_USER` / `RADICALE_PASSWORD` |
-| Super Productivity sync | `WEBDAV_USERNAME` / `WEBDAV_PASSWORD`, under Settings → Sync → WebDAV |
-| Nomie's database | `admin` / `NOMIE_COUCHDB_PASSWORD`, under Settings → Storage → CouchDB |
-| Dawarich | Creates an admin `demo@dawarich.app` on first start; its post-start hook replaces the public default password with `DAWARICH_ADMIN_PASSWORD`. Change the email once you're in. |
-| BookStack | **Its built-in default: `admin@admin.com` / `password`. Change both right away.** |
-| qBittorrent | User `admin` with a temporary password, which `install.sh` prints after the first start. |
-| Gitea | Shows an installer on first visit; the defaults are fine. |
-| Globnotes | No login by default, because being on your tailnet is the login. Set `GLOBNOTES_AUTH_TYPE=password` in its `.env` to add one. |
-
-Each value lives in that app's `.env`, e.g.
-`containers/productivity/paperless-ngx/.env`.
-
-## Security model
-
-The goal: the homelab must not be reachable from the internet or from your
-home network, only from devices on your tailnet.
-
-- **The router forwards no ports.** Tailscale makes outbound connections
-  and punches through NAT, so there's nothing to forward.
-- **The firewall blocks the LAN.** `install.sh` sets up two things. First,
-  ufw denies every incoming connection on the physical network cards
-  (`eth0`, `wlan0`, …), which covers services running on the host.
-  Second, ports published by Docker containers skip ufw's rules entirely
-  (Docker routes them through its own forwarding chain), so it adds a rule
-  to Docker's `DOCKER-USER` chain that drops new connections from those
-  same cards. Together they mean: from the LAN, nothing answers; over
-  `tailscale0`, everything does. Re-run `install.sh` after adding a
-  network card.
-- **Your tailnet is the key.** With Tailscale's default policy, every
-  member of your tailnet can reach every port on this machine. If you
-  invite friends or family, write an access policy in the
-  [Tailscale admin console](https://login.tailscale.com/admin/acls) that
-  grants each person only the apps they use. Also turn on device approval
-  and Tailnet Lock, so a stolen login can't add a new device.
-- **Secrets are unique to each install.** Every password and key is
-  generated on your machine by `openssl`. They live in each app's `.env`
-  (`chmod 600`) and are never committed. Where an upstream compose file
-  ships a public default (Dawarich's `SECRET_KEY_BASE=CHANGE_ME`, Maybe's
-  sample key), this repo makes the value required and generates it.
-- **The home screen can't run anything.** Settings and the App Store only
-  queue requests; the helper on the host runs nothing but the actions
-  listed in `scripts/agent/actions.json`, as your user (see
-  [Settings and the helper](#settings-and-the-helper)). The App Store's
-  actions take one of your apps by name; import only takes compose files
-  under your home folder, never one from the home screen's own data folder,
-  where it could have written one. So the most a compromised home screen
-  could do is stop or delete your apps (their data stays), install ones
-  from the catalog, or start a compose file you already have. In the
-  browser, restart, shut down, delete and stopping core apps also need
-  admin mode, which takes your password to turn on.
-- **Vaultwarden is HTTPS-only.** It's bound to `127.0.0.1`, reachable only
-  through `tailscale serve` (or nginx in HTTPS mode), and sign-ups are off.
-  It's the one app nginx reaches on loopback; the rest it reaches at the
-  Tailscale IP, as you would.
-
-Things to know, so nothing surprises you:
-
-- **Some containers can control Docker.** Glance, Cup and the Beszel agent
-  mount `/var/run/docker.sock` to show your containers. Docker's API has no
-  read-only mode, so each of them could control Docker if it were
-  compromised. Leave out an app you don't need.
-- **Two apps see the whole homelab folder.** Syncthing and File Browser
-  see all of `~/homelab`, including every `.env`. That's what lets you
-  sync or browse anything, but it also means a Syncthing share of the
-  repo's root sends your secrets to that device. Share subfolders (like
-  `storage/`) instead, or add `**/.env` to `.stignore`.
-- **`scripts/backup.sh` copies secrets too.** Its copies include every
-  `.env`, so treat wherever the backups go as holding the keys to the lab.
-
-## HTTPS
-
-Plain HTTP on the tailnet is already encrypted, because it runs inside
-WireGuard. HTTPS adds the browser padlock, which a few apps need:
-
-- **Vaultwarden** gets HTTPS by default, through `tailscale serve` and a
-  real certificate for your machine's tailnet name. You enable HTTPS
-  certificates once in the Tailscale admin console.
-- **Every app** can get HTTPS with your own domain and a wildcard Let's
-  Encrypt certificate, issued through DNS, so no port is opened and no
-  record is published. Put the certificate in
-  `containers/core/nginx/letsencrypt/` and `install.sh` switches every app,
-  setting and redirect over to HTTPS.
-
-Step-by-step for both: **[docs/tls.md](docs/tls.md)**.
-
-## Backup & disaster recovery
-
-A 3-2-1 strategy: three copies of everything, on two different machines,
-one of them off-site. It's built from Syncthing and one encrypted cloud, so
-no provider ever holds a readable copy of your files.
-
-The idea is that every device gets the same `~/homelab` folder, holding
-only the subfolders it needs. Syncthing keeps those subfolders identical
-across devices, so your devices together *are* the cloud:
-
-| Folder | Server | Main computer | Third device |
-| --- | --- | --- | --- |
-| `storage/` | ✔ the live files | ✔ synced | |
-| `backup/` | ✔ written by `backup.sh` | ✔ synced | |
-| `mailbox/` | ✔ | ✔ | ✔ |
-| `dev/` | ✔ | optional | optional |
-| `containers/` | ✔ live, **never synced** | | |
-
-1. **Layer 1: application backup, on the server.** `sudo
-   ./scripts/backup.sh` stops every running stack, copies `containers/`
-   (configs, `.env` secrets and app databases) to
-   `backup/containers/<date>/` with exact permissions, and starts them
-   again. Run it often, nightly from root's crontab
-   ([how](how-to-use.md#5-back-it-up)). The copy is what makes apps safe to
-   sync: a running database's files change mid-copy and arrive corrupt,
-   while the backup is a stopped, consistent snapshot. That's why
-   `containers/` itself is never shared.
-2. **Layer 2: the main computer (hot copy).** On your desktop, make a
-   `~/homelab` folder and share `storage/`, `backup/` and `mailbox/` into
-   it with Syncthing. Add `dev/` too if you want your repositories as local
-   files as well as in Git. That machine now holds every file plus the
-   latest app backups, which is everything needed to rebuild the server
-   (see below).
-3. **The third device (laptop, work machine): a shared space.** Connect it
-   to the tailnet and share just `mailbox/` (and `dev/` if you like).
-   `mailbox/` becomes a drop zone shared by all three devices: put a file
-   in on one and it's on the others moments later, reachable from anywhere,
-   with no cloud storage involved.
-4. **Layer 3: off-site, end-to-end encrypted (cold copy).** From the main
-   computer, upload `storage/` and `backup/` to a cloud that only ever sees
-   encrypted data:
-   - **Filen** is end-to-end encrypted by design.
-   - **Backblaze B2** is cheap storage but not encrypted on its own, so put
-     a client that encrypts before uploading in front of it, such as
-     `rclone` with a `crypt` remote, or `restic`.
-
-   That makes three copies (server, main computer, cloud) on two machines,
-   with one off-site: 3-2-1, with nothing to remember once it's set up.
-
-**Make it robust:**
-
-- **Turn on file versioning.** Syncthing mirrors, and a mirror isn't a
-  backup on its own: a file deleted or overwritten on one device goes away
-  everywhere. On the main computer, set `storage/` and `backup/` to
-  **Staggered File Versioning** (Edit folder → File Versioning), so
-  replaced and deleted files are kept for a while.
-- **Connect over Tailscale.** The server's firewall closes the LAN, so
-  Syncthing can't reach it there. On the other devices, set the server's
-  address to `tcp://<server-tailscale-ip>:22000` (Edit device → Advanced →
-  Addresses) for a direct connection instead of Syncthing's relays.
-- **Mind where the secrets go.** `backup/` holds every app's `.env`. Keep it
-  on machines you'd trust with your passwords, which is why it isn't on the
-  third device.
-- **Prune old backups.** Every run adds a dated copy of `containers/`.
-  Keep the latest 14, for example:
-  `ls -1d ~/homelab/backup/containers/*/ | head -n -14 | xargs -r sudo rm -rf`
-
-**Recovering on a new machine** (about an hour, most of it copying):
-
-```bash
-# 1. Fresh 64-bit Raspberry Pi OS / Debian / Ubuntu, then:
-git clone https://github.com/spaceadler/homelab ~/homelab
-# 2. Put your files back from the main computer (or the cloud): storage/ as
-#    it is, and the latest container backup over containers/:
-rsync -a main-computer:homelab/storage/ ~/homelab/storage/
-sudo rsync -a main-computer:homelab/backup/containers/<date>/ ~/homelab/containers/
-# 3. Run the installer. It keeps the restored .env files (your passwords)
-#    and picks up the new machine's Tailscale IP.
-cd ~/homelab && ./install.sh
-```
-
-## Adding an app
-
-1. **Add a row** to `containers/catalog.tsv`: genre, folder name,
-   subdomain, port, icon, display name, one-line description.
-2. **Create `containers/<genre>/<app>/` with:**
-   - `docker-compose.yml`. Use `${PUID}`, `${PGID}`, `${TZ}`,
-     `${DOMAIN}`, `${URL_SCHEME}`, `${STORAGE_DIR}`, `${HOMELAB_DIR}` and
-     `${TS_IP}` from the globals. Write `${VAR:?run ./install.sh}` for
-     anything required, so a missing value fails loudly instead of
-     becoming empty. The rule for storage: anything you'd lose goes in a
-     `./folder`, which backups copy and you can move to a new machine.
-     Things the app rebuilds by itself (caches, Redis job queues, search
-     indexes, downloaded models) go in Docker volumes, so they don't
-     bloat the backups.
-   - `.env.example`. Secrets are placeholders that `install.sh` fills in
-     once: `__PASS__` (32 letters and digits), `__HEX32__`, `__HEX64__`,
-     `__HEX128__`, and `__B64_32__`.
-   - `nginx.conf.template`, a `server` block with `include
-     snippets/listen.conf;`, `server_name <subdomain>.*;` and a `location /`
-     that proxies to `${TS_IP}:<port>` (filled in with this machine's
-     Tailscale IP) with `include snippets/proxy.conf;`. Copy any app's.
-   - **Optionally**, `*.template` files and `configure.sh` /
-     `pre-start.sh` / `post-start.sh` hooks. Hooks run from the app folder
-     with its `.env` loaded, plus `$DOCKER`, `$HOMELAB_APPS`,
-     `$HOMELAB_CATALOG`, `$HOMELAB_SITES` and a `set_env KEY VALUE`
-     helper. `pre-start.sh` exiting with 10 means "don't start this yet".
-3. **If the app ships extra static config,** whitelist it in
-   `.gitignore`. Everything else in an app folder is ignored by design.
-4. **Test it:** `./install.sh --apps "<everything you run> <app>"`.
-
-<details>
-  <summary>Hardware</summary>
-
-## Hardware
-
-The reference machine is a Raspberry Pi 4 Model B (8 GB). It's chosen for
-its balance of power draw and I/O, though any 64-bit x86 machine works just
-as well.
-
-| Component | Specification | Purpose & Justification |
-| --- | --- | --- |
-| **Compute Node** | Raspberry Pi 4 Model B | The **8GB RAM** variant handles the memory-hungry apps (Immich's machine learning especially). |
-| **Primary Storage** | 1TB SSD (SATA via USB 3.0) | Holds the OS, the apps and every file. Replaces the MicroSD card to avoid corruption. |
-| **Boot Media** | USB MSD | Boots straight from the SSD (EEPROM `BOOT_ORDER=0xf41`), bypassing the SD card. |
-| **Power** | USB-C Supply | A stable 5.1V/3A supply prevents SSD brownouts. |
-| **Network** | Gigabit Ethernet | Wired to the router for streaming and large transfers. |
-
-The Pi-specific preparation (USB boot, zram and swap) is in the
-[How-to-Use Guide](how-to-use.md#1-prepare-the-machine).
-
-</details>
+| Doc | What's in it |
+|---|---|
+| [docs/apps.md](docs/apps.md) | Every app's address and port, and how to log in the first time |
+| [docs/operating.md](docs/operating.md) | Full directory tree, everyday commands, `install.sh` flags, Settings, the helper, the App Store |
+| [docs/security.md](docs/security.md) | The security model and what to watch out for |
+| [docs/tls.md](docs/tls.md) | HTTPS: Vaultwarden by default, every app with your own domain |
+| [docs/backup.md](docs/backup.md) | 3-2-1 backup with Syncthing and an encrypted cloud; recovering on a new machine |
+| [docs/adding-an-app.md](docs/adding-an-app.md) | The app-folder contract |
+| [docs/hardware.md](docs/hardware.md) | The reference Raspberry Pi 4 build |
 
 <details>
   <summary>Screenshots</summary>
-
-## Screenshots
 
 ### Tailscale
 ![Tailscale](screenshots/Tailscale.png)
@@ -710,13 +170,8 @@ The Pi-specific preparation (USB boot, zram and swap) is in the
 
 ## Credits
 
-- **Home screen:** [adlerOS](https://github.com/spaceadler/adleros), which credits its design (after
-  umbrelOS, reimplemented, no umbrelOS code or artwork), its font (Inter,
-  SIL OFL) and its wallpapers (NASA, public domain).
-- **App icons:** fetched at runtime from
-  [dashboard-icons](https://github.com/homarr-labs/dashboard-icons). Each
-  icon belongs to its app's project.
+- **Home screen:** [adlerOS](https://github.com/spaceadler/adleros), which credits its design (after umbrelOS, reimplemented, no umbrelOS code or artwork), its font (Inter, SIL OFL) and its wallpapers (NASA, public domain).
+- **App icons:** fetched at runtime from [dashboard-icons](https://github.com/homarr-labs/dashboard-icons). Each icon belongs to its app's project.
 
 ---
-
 *powered by logic, coffee, and many sleepless nights*
