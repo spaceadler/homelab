@@ -2,7 +2,7 @@
 
 ← [README](README.md)
 
-> Generated from commit `030259e` by `scripts/codemap.py`. Regenerate it from the workspace root with `python3 scripts/codemap.py homelab`; don't edit it by hand.
+> Generated from commit `c142344` by `scripts/codemap.py`. Regenerate it from the workspace root with `python3 scripts/codemap.py homelab`; don't edit it by hand.
 
 ## Files
 
@@ -35,11 +35,6 @@ The most connected functions: where a change reaches furthest.
 | `start_app()` | `install.sh:666` | 1 | 4 |
 | `write_env()` | `install.sh:575` | 1 | 3 |
 | `conf_get()` | `install.sh:99` | 3 | 0 |
-| `confirm()` | `install.sh:66` | 2 | 1 |
-| `env_file_set()` | `install.sh:77` | 3 | 0 |
-| `free_dns_port()` | `install.sh:291` | 1 | 2 |
-| `interactive()` | `install.sh:56` | 3 | 0 |
-| `render_templates()` | `install.sh:617` | 1 | 2 |
 
 ```mermaid
 flowchart LR
@@ -58,16 +53,10 @@ flowchart LR
     n_install_start_app["start_app()"]
     n_install_write_env["write_env()"]
     n_install_conf_get["conf_get()"]
-    n_install_confirm["confirm()"]
-    n_install_env_file_set["env_file_set()"]
-    n_install_free_dns_port["free_dns_port()"]
-    n_install_interactive["interactive()"]
-    n_install_render_templates["render_templates()"]
     n_install_main --> n_install_die
     n_install_main --> n_install_fetch_adleros
     n_install_main --> n_install_host_packages
     n_install_main --> n_install_firewall_setup
-    n_install_main --> n_install_free_dns_port
     n_install_main --> n_install_install_agent
     n_install_main --> n_install_configure_globals
     n_install_main --> n_install_select_apps
@@ -78,16 +67,12 @@ flowchart LR
     n_install_select_apps --> n_install_step
     n_install_select_apps --> n_install_conf_get
     n_install_select_apps --> n_install_die
-    n_install_select_apps --> n_install_interactive
-    n_install_select_apps --> n_install_env_file_set
     n_install_select_apps --> n_install_info
     n_install_configure_app --> n_install_die
     n_install_configure_app --> n_install_write_env
-    n_install_configure_app --> n_install_render_templates
     n_install_configure_globals --> n_install_step
     n_install_configure_globals --> n_install_conf_get
     n_install_configure_globals --> n_install_die
-    n_install_configure_globals --> n_install_env_file_set
     n_install_configure_globals --> n_install_info
     n_install_fetch_adleros --> n_install_step
     n_install_fetch_adleros --> n_install_info
@@ -97,7 +82,6 @@ flowchart LR
     n_install_firewall_setup --> n_install_step
     n_install_firewall_setup --> n_install_warn
     n_install_firewall_setup --> n_install_info
-    n_install_firewall_setup --> n_install_confirm
     n_install_host_packages --> n_install_step
     n_install_host_packages --> n_install_die
     n_install_host_packages --> n_install_info
@@ -109,9 +93,6 @@ flowchart LR
     n_install_start_app --> n_install_warn
     n_install_start_app --> n_install_info
     n_install_write_env --> n_install_info
-    n_install_confirm --> n_install_interactive
-    n_install_free_dns_port --> n_install_info
-    n_install_free_dns_port --> n_install_warn
 ```
 
 ## Functions
