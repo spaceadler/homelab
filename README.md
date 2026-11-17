@@ -16,7 +16,7 @@ cd ~/homelab && ./install.sh
 ```
 
 ```mermaid
-flowchart LR
+flowchart TB
     run(["./install.sh"]) --> host["host: Docker, Tailscale,<br/>ufw + DOCKER-USER lockout"]
     host --> pick["pick apps<br/>(catalog.tsv)"]
     pick --> secrets["generate every secret<br/>(once, kept forever)"]
@@ -30,7 +30,7 @@ Run it again anytime: it's how you add apps, apply settings and update. It never
 ## How It Works
 
 ```mermaid
-graph LR
+graph TB
     classDef client fill:#4A90E2,stroke:#2E5C8A,stroke-width:2px,color:#fff;
     classDef vpn fill:#00004B,stroke:#00004B,stroke-width:2px,color:#fff;
     classDef dns fill:#2C3E50,stroke:#34495E,stroke-width:2px,color:#fff;
@@ -67,7 +67,7 @@ graph LR
 ## The Apps
 
 ```mermaid
-flowchart TB
+flowchart LR
     core["Core: Nginx · Pi-hole · Vaultwarden · adlerOS"]
     core --- sys["System<br/>Glance · Beszel · Cup"]
     core --- media["Media<br/>Immich · Stremio · Navidrome · Audiobookshelf"]
@@ -84,7 +84,7 @@ Core is always installed; the rest you pick by genre. Every address, port and fi
 `http://homelab.local` opens **[adlerOS](https://github.com/spaceadler/adleros)**, styled after umbrelOS: app pages per collection, widgets, a dock, search, Files, Live Usage, Settings and an App Store, all keyboard-drivable. It's **its own repo**: `install.sh` only fetches it into `containers/core/os/adleros/` and runs its installer. Skip it with `--no-adleros`.
 
 ```mermaid
-flowchart LR
+flowchart TB
     os["adlerOS<br/>(no Docker, no root)"] -->|"writes a request"| q[("queue/")]
     q --> helper["helper (systemd)<br/>runs as you"]
     helper -->|"only actions in<br/>actions.json"| machine["apps · backup · update"]
