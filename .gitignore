@@ -3,6 +3,7 @@
 
 /homelab.env
 .env
+.env.bak*
 
 # App folders: commit the recipe, never the data. Ignore everything inside
 # containers/<genre>/<app>/, then let the recipe files back in.
