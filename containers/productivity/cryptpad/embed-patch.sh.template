@@ -8,10 +8,10 @@
 # its office apps and its home and login pages in a frame, and treats a
 # framed page as not the top one (Share, Access and Properties then only
 # offer to open it directly). This lifts those, in sframe-common-outer.js
-# and template.js. It is safe only because nginx.conf.template adds a second
-# policy, frame-ancestors: adlerOS (and, for the sandbox, CryptPad's own
-# page) only, so no other site can frame CryptPad to trick a click out of
-# you. With embedding off, nothing changes: CryptPad still refuses frames.
+# and the pages' own scripts. It is safe only because nginx.conf.template
+# adds a second policy, frame-ancestors: adlerOS (and, for the sandbox,
+# CryptPad's own page) only, so no other site can frame CryptPad to trick a
+# click out of you. With embedding off, nothing changes: CryptPad still refuses frames.
 # adlerOS sees the marker (adleros-embed) and opens CryptPad in a window.
 #
 # Each start, on the image's own copies: if an update changed those lines,
@@ -28,15 +28,19 @@ elif grep -q "if (!embeddableApps.includes(window.location.pathname)) {" "$f" \
 else
     echo "adlerOS: sframe-common-outer.js has changed upstream; not patched, so CryptPad stays out of windows"
 fi
-# The info pages (home, login, sign-up) quit silently in a frame, in
-# customize.dist/template.js: the same reason, the same rule.
-t=/cryptpad/customize.dist/template.js
-if grep -q "adleros-embed" "$t"; then
-    :
-elif grep -q "if (window.top !== window) { return; }" "$t"; then
-    sed -i 's|if (window.top !== window) { return; }|if (false \&\& window.top !== window) { return; } // adleros-embed|' "$t"
-    echo "adlerOS: CryptPad's home, login and sign-up pages may run in adlerOS's windows (template.js patched)"
-else
-    echo "adlerOS: template.js has changed upstream; not patched (its home and login pages stay out of windows)"
-fi
+# The home page and the account pages (login, sign-up, recovery, single
+# sign-on) quit silently in a frame, each with the same line: the same
+# reason, the same rule. (Login's form then falls back to a plain one that
+# puts the password in the address, so all of them, or none.)
+for t in /cryptpad/customize.dist/template.js /cryptpad/www/login/main.js /cryptpad/www/register/main.js \
+        /cryptpad/www/recovery/main.js /cryptpad/www/ssoauth/main.js; do
+    if grep -q "adleros-embed" "$t"; then
+        :
+    elif grep -qF "if (window.top !== window) { return; }" "$t"; then
+        sed -i 's|if (window.top !== window) { return; }|if (false \&\& window.top !== window) { return; } // adleros-embed|' "$t"
+        echo "adlerOS: ${t#/cryptpad/} may run in adlerOS's windows (patched)"
+    else
+        echo "adlerOS: ${t#/cryptpad/} has changed upstream; not patched (that page stays out of windows)"
+    fi
+done
 exec npm start
