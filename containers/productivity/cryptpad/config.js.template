@@ -9,7 +9,6 @@ module.exports = {
     httpSafeOrigin: '${URL_SCHEME}://workspacesb.${DOMAIN}',
     httpAddress: '0.0.0.0',
     httpPort: 3000,
-    websocketPort: 3003,
 
     // CRYPTPAD_ADMIN_KEYS from .env, space-separated.
     adminKeys: '${CRYPTPAD_ADMIN_KEYS}'.split(' ').filter(Boolean),

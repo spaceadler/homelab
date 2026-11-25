@@ -24,9 +24,16 @@ services:
       - ./onlyoffice-dist:/cryptpad/www/common/onlyoffice/dist
       - ./onlyoffice-conf:/cryptpad/onlyoffice-conf
       - ./config.js:/cryptpad/config/config.js
+      # The image's own infra.example.js (infra.js.template, rendered as is).
+      # Since the 2026 images CryptPad needs one, and /cryptpad/config isn't
+      # writable by its user, so the image can't copy its example there itself
+      # (it stops before starting). The domains and the listen address still
+      # come from the CPAD_* above.
+      - ./infra.js:/cryptpad/config/infra.js:ro
+    # One port: the WebSocket (/cryptpad_websocket) is on 3000 as well since
+    # the 2026 images; there's no 3003 any more.
     ports:
       - "7000:3000"
-      - "7007:3003"
     ulimits:
       nofile:
         soft: 1000000
