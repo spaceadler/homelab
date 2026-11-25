@@ -1,10 +1,28 @@
 # CryptPad → http://workspace.<domain>, sandbox at http://workspacesb.<domain>.
 # Both names go to the same server, which tells them apart by Host header.
+#
+# Each also gets a second Content-Security-Policy beside CryptPad's own
+# (browsers apply both): only adlerOS ($adleros_origin, homelab.conf) may show
+# CryptPad in a frame, and only CryptPad's own page the sandbox. CryptPad
+# alone, with embedding on, would let any HTTPS site frame it; embed-patch.sh
+# relies on this. Not snippets/frame.conf: that drops the app's own policy,
+# and CryptPad's is what keeps its sandbox walled off.
 server {
     include snippets/listen.conf;
-    server_name workspace.* workspacesb.*;
+    server_name workspace.*;
     location / {
         proxy_pass http://${TS_IP}:7000;
         include snippets/proxy.conf;
+        add_header Content-Security-Policy "frame-ancestors 'self' $adleros_origin" always;
+    }
+}
+
+server {
+    include snippets/listen.conf;
+    server_name workspacesb.*;
+    location / {
+        proxy_pass http://${TS_IP}:7000;
+        include snippets/proxy.conf;
+        add_header Content-Security-Policy "frame-ancestors 'self' ${URL_SCHEME}://workspace.${DOMAIN} $adleros_origin" always;
     }
 }

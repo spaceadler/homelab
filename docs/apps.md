@@ -105,6 +105,7 @@ Do that before you share your tailnet with anyone. The exceptions:
 | BookStack | **Its built-in default: `admin@admin.com` / `password`. Change both right away.** |
 | qBittorrent | User `admin` with a temporary password, which `install.sh` prints after the first start. |
 | Gitea | Shows an installer on first visit; the defaults are fine. |
+| CryptPad | Register the first account, then make it the admin: its public signing key (Settings → Account) into `CRYPTPAD_ADMIN_KEYS` in `.env`, then `./install.sh` again and restart it (`docker compose restart`). To use it in adlerOS's windows rather than a tab, turn on Administration → *Enable remote embedding*: `embed-patch.sh` and its nginx route then let only adlerOS frame it. |
 | Globnotes | No login by default, because being on your tailnet is the login. Set `GLOBNOTES_AUTH_TYPE=password` in its `.env` to add one. |
 
 Each value lives in that app's `.env`, e.g.

@@ -30,6 +30,10 @@ services:
       # (it stops before starting). The domains and the listen address still
       # come from the CPAD_* above.
       - ./infra.js:/cryptpad/config/infra.js:ro
+      # Lets it run inside adlerOS's windows once embedding is on (read it first).
+      - ./embed-patch.sh:/cryptpad/embed-patch.sh:ro
+    # The image's entrypoint runs first, then this: the patch, then npm start.
+    command: ["sh", "/cryptpad/embed-patch.sh"]
     # One port: the WebSocket (/cryptpad_websocket) is on 3000 as well since
     # the 2026 images; there's no 3003 any more.
     ports:
