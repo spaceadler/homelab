@@ -2,7 +2,7 @@
 
 ← [README](README.md)
 
-> Generated from commit `c142344` by `scripts/codemap.py`. Regenerate it from the workspace root with `python3 scripts/codemap.py homelab`; don't edit it by hand.
+> Generated from commit `789e78f` by `scripts/codemap.py`. Regenerate it from the workspace root with `python3 scripts/codemap.py homelab`; don't edit it by hand.
 
 ## Files
 
